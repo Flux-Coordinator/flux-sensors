@@ -25,3 +25,8 @@ cd flux-sensors
 pip3 install .
 ```
 The cli command `flux` should be available now.
+
+If the command is not found, `~/.local/bin/` has to be added to the `$PATH`:
+
+- add the line `export PATH=~/.local/bin:$PATH` to `~/.bash_profile`
+- then run `source ~/.bash_profile` to reload the profile
