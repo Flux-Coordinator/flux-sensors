@@ -69,7 +69,7 @@ class Localizer(object):
 
     def print_position(self, position):
         """Prints the Pozyx's position"""
-        print("x(mm): {pos.x} y(mm): {pos.y} z(mm): {pos.z}".format(pos=position))
+        print("{pos.x};{pos.y};{pos.z}".format(pos=position))
 
     def print_error(self, operation):
         """Prints the Pozyx's error and possibly sends it as a OSC packet"""

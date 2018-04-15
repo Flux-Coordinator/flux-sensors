@@ -15,10 +15,10 @@ def run_pozyx():
     pozyx = localizer.PozyxSerial(serial_port)
     pozyx_localizer = localizer.Localizer(pozyx)
 
-    pozyx_localizer.add_anchor(0x6e4e, localizer.Coordinates(-100, -100, 1150))
-    pozyx_localizer.add_anchor(0x6964, localizer.Coordinates(8450, -1200, 2150))
-    pozyx_localizer.add_anchor(0x6e5f, localizer.Coordinates(1250, -12000, 1150))
-    pozyx_localizer.add_anchor(0x6e62, localizer.Coordinates(7350, -11660, 1590))
+    pozyx_localizer.add_anchor(0x6e4e, localizer.Coordinates(-100, 100, 1150))
+    pozyx_localizer.add_anchor(0x6964, localizer.Coordinates(8450, 1200, 2150))
+    pozyx_localizer.add_anchor(0x6e5f, localizer.Coordinates(1250, 12000, 1150))
+    pozyx_localizer.add_anchor(0x6e62, localizer.Coordinates(7350, 11660, 1590))
 
     pozyx_localizer.initialize()
     while True:
