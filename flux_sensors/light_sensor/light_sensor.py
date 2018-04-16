@@ -58,10 +58,17 @@ class SensorNotInitializedError(LightSensorError):
 class LightSensor(object):
     """Interface to control the light sensor"""
 
-    def __init__(self, device_address):
-        self._bus = smbus2.SMBus(1)  # 0 = /dev/i2c-0 (port I2C0), 1 = /dev/i2c-1 (port I2C1)
+    def __init__(self, device_address, device):
+        self._bus = device
         self._device_address = device_address
         self._is_initialized = False
+
+    @staticmethod
+    def get_device(i2c_port=1):
+        """0 = /dev/i2c-0 (port I2C0), 1 = /dev/i2c-1 (port I2C1)"""
+        if i2c_port < 0 or i2c_port > 1:
+            raise ValueError("Argument I2C-port must be between 0 and 1.")
+        return smbus2.SMBus(i2c_port)
 
     def check_for_initialization(self):
         if not self._is_initialized:
@@ -83,7 +90,6 @@ class LightSensor(object):
         self._bus.write_byte_data(self._device_address, register_address, bit_value)
 
     def read_16bit_register(self, register_address):
-        self.check_for_initialization()
         self.check_register_address(register_address)
         byte_values = self._bus.read_i2c_block_data(self._device_address, register_address, 2)
         print("Low Value: {0:b}".format(byte_values[0]))
@@ -113,14 +119,21 @@ class LightSensor(object):
     def startup(self):
         self.write_register(ENABLE_REGISTER, ALS_ENABLE | POWER_ON)
 
+    def do_measurement(self):
+        self.check_for_initialization()
+        x = self.read_x_data()
+        y = self.read_y_data()
+        z = self.read_z_data()
+        return "{0};{1};{2}".format(x, y, z)
+
     def read_z_data(self):
-        self.read_16bit_register(CH0DATAL_REGISTER)
+        return self.read_16bit_register(CH0DATAL_REGISTER)
 
     def read_y_data(self):
-        self.read_16bit_register(CH1DATAL_REGISTER)
+        return self.read_16bit_register(CH1DATAL_REGISTER)
 
-    def read_ir1_dData(self):
-        self.read_16bit_register(CH2DATAL_REGISTER)
+    def read_ir1_data(self):
+        return self.read_16bit_register(CH2DATAL_REGISTER)
 
     def read_x_data(self):
-        self.read_16bit_register(CH3DATAL_REGISTER)
+        return self.read_16bit_register(CH3DATAL_REGISTER)

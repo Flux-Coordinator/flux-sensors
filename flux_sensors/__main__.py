@@ -8,11 +8,15 @@ def main():
     start_measurement()
 
 
+AMS_LIGHT_SENSOR_I2C_ADDRESS = 0x39
+
 pozyx_localizer = None
+ams_light_sensor = None
 
 
 def initialize_sensors():
     global pozyx_localizer
+    global ams_light_sensor
 
     pozyx = localizer.Localizer.get_device()
     pozyx_localizer = localizer.Localizer(pozyx)
@@ -24,10 +28,15 @@ def initialize_sensors():
 
     pozyx_localizer.initialize()
 
+    ams_device = light_sensor.LightSensor.get_device(1)
+    ams_light_sensor = light_sensor.LightSensor(AMS_LIGHT_SENSOR_I2C_ADDRESS, ams_device)
+
+    ams_light_sensor.initialize()
+
 
 def start_measurement():
     while True:
-        print(pozyx_localizer.do_positioning())
+        print("{0}/{1}".format(pozyx_localizer.do_positioning(), ams_light_sensor.do_measurement()))
 
 
 if __name__ == "__main__":
