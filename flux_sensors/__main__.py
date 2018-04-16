@@ -12,6 +12,8 @@ pozyx_localizer = None
 
 
 def initialize_sensors():
+    global pozyx_localizer
+
     pozyx = localizer.Localizer.get_device()
     pozyx_localizer = localizer.Localizer(pozyx)
 
@@ -25,7 +27,7 @@ def initialize_sensors():
 
 def start_measurement():
     while True:
-        pozyx_localizer.do_positioning()
+        print(pozyx_localizer.do_positioning())
 
 
 if __name__ == "__main__":
