@@ -67,17 +67,24 @@ class LightSensor(object):
         if not self._is_initialized:
             raise SensorNotInitializedError("The light sensor must be initialized to perform measurements")
 
+    def check_register_address(self, register_address):
+        if register_address < 0x80 or register_address > 0xDD:
+            raise ValueError("Register address out of range.")
+
     def is_initialized(self):
         return self._is_initialized
 
     def read_register(self, register_address):
+        self.check_register_address(register_address)
         return self._bus.read_byte_data(self._device_address, register_address)
 
     def write_register(self, register_address, bit_value):
+        self.check_register_address(register_address)
         self._bus.write_byte_data(self._device_address, register_address, bit_value)
 
     def read_16bit_register(self, register_address):
         self.check_for_initialization()
+        self.check_register_address(register_address)
         byte_values = self._bus.read_i2c_block_data(self._device_address, register_address, 2)
         print("Low Value: {0:b}".format(byte_values[0]))
         print("High Value: {0:b}".format(byte_values[1]))
@@ -89,7 +96,13 @@ class LightSensor(object):
         return self.read_register(ID_REGISTER) >> 2
 
     def initialize(self, atime=53, wtime=0, wlong=0):
-        # todo check range of values
+        if atime < 0 or atime > 256:
+            raise ValueError("Argument ATIME must be between 0 and 256.")
+        elif wtime < 0 or wtime > 256:
+            raise ValueError("Argument WTIME must be between 0 and 256.")
+        elif wlong < 0 or wlong > 1:
+            raise ValueError("Argument WLONG must be between 0 and 1.")
+
         self.write_register(ATIME_REGISTER, atime)
         self.write_register(WTIME_REGISTER, wtime)
         self.write_register(CFG0_REGISTER, RESET_CFG0 | (wlong * 4))
