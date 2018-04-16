@@ -16,20 +16,20 @@ class BitValues(Enum):
     BIT_7 = 0b10000000
 
 
-ENABLE_REGISTER = 0x80 # Enables states and interrupts
-WAIT_ENABLE = BitValues.BIT_3 # This bit activates the wait feature. (1=enabled / 0=disabled)
-ALS_ENABLE = BitValues.BIT_1 # This bit activates the ALS function (start measurement). (1=enabled / 0=disabled)
-POWER_ON = BitValues.BIT_0 # This bit activates the internal oscillator (power ON). (1=enabled / 0=disabled)
+ENABLE_REGISTER = 0x80  # Enables states and interrupts
+WAIT_ENABLE = BitValues.BIT_3  # This bit activates the wait feature. (1=enabled / 0=disabled)
+ALS_ENABLE = BitValues.BIT_1  # This bit activates the ALS function (start measurement). (1=enabled / 0=disabled)
+POWER_ON = BitValues.BIT_0  # This bit activates the internal oscillator (power ON). (1=enabled / 0=disabled)
 
-ATIME_REGISTER = 0x81 # ADC integration time (8bit value in 2.78ms intervals)
+ATIME_REGISTER = 0x81  # ADC integration time (8bit value in 2.78ms intervals)
 
-WTIME_REGISTER = 0x83 # Time to wait between ALS cycles (8bit value in 2.78ms intervals)
+WTIME_REGISTER = 0x83  # Time to wait between ALS cycles (8bit value in 2.78ms intervals)
 
-CFG0_REGISTER = 0x8D # Configuration register one
-RESET_CFG0 = BitValues.BIT_7 # Reserved. Must be set to 0b10000000.
+CFG0_REGISTER = 0x8D  # Configuration register one
+RESET_CFG0 = BitValues.BIT_7  # Reserved. Must be set to 0b10000000.
 
-CFG1_REGISTER = 0x90 # Configuration register one
-ALS_MULTIPLEXER = BitValues.BIT_3 # Sets the CH3 input. (0=X-Channel (default) / 1=IR2)
+CFG1_REGISTER = 0x90  # Configuration register one
+ALS_MULTIPLEXER = BitValues.BIT_3  # Sets the CH3 input. (0=X-Channel (default) / 1=IR2)
 
 
 class AlsGainControl(Enum):
@@ -41,29 +41,29 @@ class AlsGainControl(Enum):
 
 ID_REGISTER = 0x92
 
-CH0DATAL_REGISTER = 0X94 # Low Byte of CH0 ADC data. Contains Z data.
-CH1DATAL_REGISTER = 0X96 # Low Byte of CH1 ADC data. Contains Y data.
-CH2DATAL_REGISTER = 0X98 # Low Byte of CH2 ADC data. Contains IR1 data.
-CH3DATAL_REGISTER = 0X9A # Low Byte of CH3 ADC data. Contains X or IR2 data (depends on ALS_MULTIPLEXER).
+CH0DATAL_REGISTER = 0X94  # Low Byte of CH0 ADC data. Contains Z data.
+CH1DATAL_REGISTER = 0X96  # Low Byte of CH1 ADC data. Contains Y data.
+CH2DATAL_REGISTER = 0X98  # Low Byte of CH2 ADC data. Contains IR1 data.
+CH3DATAL_REGISTER = 0X9A  # Low Byte of CH3 ADC data. Contains X or IR2 data (depends on ALS_MULTIPLEXER).
 
 
 class LightSensor(object):
     """Interface to control the light sensor"""
 
     def __init__(self, deviceAddress):
-        self._bus = smbus2.SMBus(1) # 0 = /dev/i2c-0 (port I2C0), 1 = /dev/i2c-1 (port I2C1)
-        self._deviceAddress = deviceAddress
-        self._isInitialized = False
+        self._bus = smbus2.SMBus(1)  # 0 = /dev/i2c-0 (port I2C0), 1 = /dev/i2c-1 (port I2C1)
+        self._device_address = deviceAddress
+        self._is_initialized = False
 
     def read_register(self, registerAddress):
-        return self._bus.read_byte_data(self._deviceAddress, registerAddress)
+        return self._bus.read_byte_data(self._device_address, registerAddress)
 
     def write_register(self, registerAddress, bitValue):
-        self._bus.write_byte_data(self._deviceAddress, registerAddress, bitValue)
+        self._bus.write_byte_data(self._device_address, registerAddress, bitValue)
 
     def read_16bit_register(self, registerAddress):
         # todo check if initialized
-        byteValues = self._bus.read_i2c_block_data(self._deviceAddress, registerAddress, 2)
+        byteValues = self._bus.read_i2c_block_data(self._device_address, registerAddress, 2)
         print("Low Value: {0:b}".format(byteValues[0]))
         print("High Value: {0:b}".format(byteValues[1]))
         print('\n')
@@ -79,7 +79,7 @@ class LightSensor(object):
         self.write_register(WTIME_REGISTER, wtime)
         self.write_register(CFG0_REGISTER, RESET_CFG0 | (wlong * 4))
         self.write_register(CFG1_REGISTER, AlsGainControl.AGAIN_4x)
-        self._isInitialized = True
+        self._is_initialized = True
 
     def startup(self):
         self.write_register(ENABLE_REGISTER, ALS_ENABLE | POWER_ON)
