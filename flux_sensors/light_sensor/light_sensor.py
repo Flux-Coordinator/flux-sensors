@@ -47,38 +47,54 @@ CH2DATAL_REGISTER = 0X98  # Low Byte of CH2 ADC data. Contains IR1 data.
 CH3DATAL_REGISTER = 0X9A  # Low Byte of CH3 ADC data. Contains X or IR2 data (depends on ALS_MULTIPLEXER).
 
 
+class LightSensorError(Exception):
+    """Base class for exceptions in this module."""
+
+
+class SensorNotInitializedError(LightSensorError):
+    """Exception raised when the light sensor is not initialized when starting the measurement."""
+
+
 class LightSensor(object):
     """Interface to control the light sensor"""
 
-    def __init__(self, deviceAddress):
+    def __init__(self, device_address):
         self._bus = smbus2.SMBus(1)  # 0 = /dev/i2c-0 (port I2C0), 1 = /dev/i2c-1 (port I2C1)
-        self._device_address = deviceAddress
+        self._device_address = device_address
         self._is_initialized = False
 
-    def read_register(self, registerAddress):
-        return self._bus.read_byte_data(self._device_address, registerAddress)
+    def check_for_initialization(self):
+        if not self._is_initialized:
+            raise SensorNotInitializedError("The light sensor must be initialized to perform measurements")
 
-    def write_register(self, registerAddress, bitValue):
-        self._bus.write_byte_data(self._device_address, registerAddress, bitValue)
+    def is_initialized(self):
+        return self._is_initialized
 
-    def read_16bit_register(self, registerAddress):
-        # todo check if initialized
-        byteValues = self._bus.read_i2c_block_data(self._device_address, registerAddress, 2)
-        print("Low Value: {0:b}".format(byteValues[0]))
-        print("High Value: {0:b}".format(byteValues[1]))
+    def read_register(self, register_address):
+        return self._bus.read_byte_data(self._device_address, register_address)
+
+    def write_register(self, register_address, bit_value):
+        self._bus.write_byte_data(self._device_address, register_address, bit_value)
+
+    def read_16bit_register(self, register_address):
+        self.check_for_initialization()
+        byte_values = self._bus.read_i2c_block_data(self._device_address, register_address, 2)
+        print("Low Value: {0:b}".format(byte_values[0]))
+        print("High Value: {0:b}".format(byte_values[1]))
         print('\n')
-        return byteValues[1] * 256 + byteValues[0]
+        return byte_values[1] * 256 + byte_values[0]
 
     def get_device_id(self):
         """Returns the 6 Bit Part Number Identification (e.g. 110111=TCS3430)"""
         return self.read_register(ID_REGISTER) >> 2
 
-    def initialize_sensor(self, atime=53, wtime=0, wlong=0):
+    def initialize(self, atime=53, wtime=0, wlong=0):
         # todo check range of values
         self.write_register(ATIME_REGISTER, atime)
         self.write_register(WTIME_REGISTER, wtime)
         self.write_register(CFG0_REGISTER, RESET_CFG0 | (wlong * 4))
         self.write_register(CFG1_REGISTER, AlsGainControl.AGAIN_4x)
+        self.startup()
         self._is_initialized = True
 
     def startup(self):
