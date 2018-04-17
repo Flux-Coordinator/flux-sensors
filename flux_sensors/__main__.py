@@ -1,5 +1,7 @@
 from flux_sensors.localizer import localizer
 from flux_sensors.light_sensor import light_sensor
+import time
+import datetime
 
 
 def main():
@@ -36,7 +38,10 @@ def initialize_sensors():
 
 def start_measurement():
     while True:
-        print("{0}/{1}".format(pozyx_localizer.do_positioning(), ams_light_sensor.do_measurement()))
+        time_stamp = time.time()
+        formatted_time_stamp = datetime.datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
+        print("{0}/{1}/{2}".format(formatted_time_stamp, pozyx_localizer.do_positioning(),
+                                   ams_light_sensor.do_measurement()))
 
 
 if __name__ == "__main__":
