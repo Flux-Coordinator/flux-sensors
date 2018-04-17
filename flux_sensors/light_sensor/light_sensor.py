@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-from enum import IntFlag
+from enum import IntEnum
 import smbus2, struct
 
 
 # Registers and values
-class BitValues(IntFlag):
+class BitValues(IntEnum):
     BIT_0 = 0b00000001
     BIT_1 = 0b00000010
     BIT_2 = 0b00000100
@@ -32,7 +32,7 @@ CFG1_REGISTER = 0x90  # Configuration register one
 ALS_MULTIPLEXER = BitValues.BIT_3  # Sets the CH3 input. (0=X-Channel (default) / 1=IR2)
 
 
-class AlsGainControl(IntFlag):
+class AlsGainControl(IntEnum):
     AGAIN_1x = 0b00
     AGAIN_4x = 0b01
     AGAIN_16x = 0b10
@@ -92,9 +92,6 @@ class LightSensor(object):
     def read_16bit_register(self, register_address):
         self.check_register_address(register_address)
         byte_values = self._bus.read_i2c_block_data(self._device_address, register_address, 2)
-        print("Low Value: {0:b}".format(byte_values[0]))
-        print("High Value: {0:b}".format(byte_values[1]))
-        print('\n')
         return byte_values[1] * 256 + byte_values[0]
 
     def get_device_id(self):
