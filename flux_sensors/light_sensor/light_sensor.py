@@ -4,7 +4,6 @@ from enum import IntEnum
 import smbus2, struct
 
 
-# Registers and values
 class BitValues(IntEnum):
     BIT_0 = 0b00000001
     BIT_1 = 0b00000010
@@ -16,19 +15,31 @@ class BitValues(IntEnum):
     BIT_7 = 0b10000000
 
 
-ENABLE_REGISTER = 0x80  # Enables states and interrupts
+class ConfigRegister(IntEnum):
+    ENABLE_REGISTER = 0x80  # Enables states and interrupts
+    ATIME_REGISTER = 0x81  # ADC integration time (8bit value in 2.78ms intervals)
+    WTIME_REGISTER = 0x83  # Time to wait between ALS cycles (8bit value in 2.78ms intervals)
+    CFG0_REGISTER = 0x8D  # Configuration register one
+    CFG1_REGISTER = 0x90  # Configuration register one
+    ID_REGISTER = 0x92  # ID Register with Part Number Identification
+
+
+class DataRegister(IntEnum):
+    CH0DATAL_REGISTER = 0X94  # Low Byte of CH0 ADC data. Contains Z data.
+    CH1DATAL_REGISTER = 0X96  # Low Byte of CH1 ADC data. Contains Y data.
+    CH2DATAL_REGISTER = 0X98  # Low Byte of CH2 ADC data. Contains IR1 data.
+    CH3DATAL_REGISTER = 0X9A  # Low Byte of CH3 ADC data. Contains X or IR2 data (depends on ALS_MULTIPLEXER).
+
+
+# ENABLE_REGISTER
 WAIT_ENABLE = BitValues.BIT_3  # This bit activates the wait feature. (1=enabled / 0=disabled)
 ALS_ENABLE = BitValues.BIT_1  # This bit activates the ALS function (start measurement). (1=enabled / 0=disabled)
 POWER_ON = BitValues.BIT_0  # This bit activates the internal oscillator (power ON). (1=enabled / 0=disabled)
 
-ATIME_REGISTER = 0x81  # ADC integration time (8bit value in 2.78ms intervals)
-
-WTIME_REGISTER = 0x83  # Time to wait between ALS cycles (8bit value in 2.78ms intervals)
-
-CFG0_REGISTER = 0x8D  # Configuration register one
+# CFG0_REGISTER
 RESET_CFG0 = BitValues.BIT_7  # Reserved. Must be set to 0b10000000.
 
-CFG1_REGISTER = 0x90  # Configuration register one
+# CFG1_REGISTER
 ALS_MULTIPLEXER = BitValues.BIT_3  # Sets the CH3 input. (0=X-Channel (default) / 1=IR2)
 
 
@@ -37,14 +48,6 @@ class AlsGainControl(IntEnum):
     AGAIN_4x = 0b01
     AGAIN_16x = 0b10
     AGAIN_64x = 0b11
-
-
-ID_REGISTER = 0x92
-
-CH0DATAL_REGISTER = 0X94  # Low Byte of CH0 ADC data. Contains Z data.
-CH1DATAL_REGISTER = 0X96  # Low Byte of CH1 ADC data. Contains Y data.
-CH2DATAL_REGISTER = 0X98  # Low Byte of CH2 ADC data. Contains IR1 data.
-CH3DATAL_REGISTER = 0X9A  # Low Byte of CH3 ADC data. Contains X or IR2 data (depends on ALS_MULTIPLEXER).
 
 
 class LightSensorError(Exception):
@@ -96,7 +99,7 @@ class LightSensor(object):
 
     def get_device_id(self):
         """Returns the 6 Bit Part Number Identification (e.g. 110111=TCS3430)"""
-        return self.read_register(ID_REGISTER) >> 2
+        return self.read_register(ConfigRegister.ID_REGISTER) >> 2
 
     def initialize(self, atime=53, wtime=0, wlong=0):
         if atime < 0 or atime > 256:
@@ -106,15 +109,26 @@ class LightSensor(object):
         elif wlong < 0 or wlong > 1:
             raise ValueError("Argument WLONG must be between 0 and 1.")
 
-        self.write_register(ATIME_REGISTER, atime)
-        self.write_register(WTIME_REGISTER, wtime)
-        self.write_register(CFG0_REGISTER, RESET_CFG0 | (wlong * 4))
-        self.write_register(CFG1_REGISTER, AlsGainControl.AGAIN_4x)
+        self.write_register(ConfigRegister.ATIME_REGISTER, atime)
+        self.write_register(ConfigRegister.WTIME_REGISTER, wtime)
+        self.write_register(ConfigRegister.CFG0_REGISTER, RESET_CFG0 | (wlong * 4))
+        self.write_register(ConfigRegister.CFG1_REGISTER, AlsGainControl.AGAIN_4x)
+
         self.startup()
+        self.print_device_configuration()
+
         self._is_initialized = True
 
     def startup(self):
-        self.write_register(ENABLE_REGISTER, ALS_ENABLE | POWER_ON)
+        self.write_register(ConfigRegister.ENABLE_REGISTER, ALS_ENABLE | POWER_ON)
+
+    def print_device_configuration(self):
+        print("---------------------------------------------")
+        print("LIGHT SENSOR CONFIGURATION:")
+        for register in ConfigRegister:
+            configValue = self.read_register(register.value)
+            print("{0: >16}\t0x{1:02x}\t{2:08b}\t{2}".format(register.name, register.value, configValue))
+        print("---------------------------------------------")
 
     def do_measurement(self):
         self.check_for_initialization()
@@ -124,13 +138,13 @@ class LightSensor(object):
         return "{0};{1};{2}".format(x, y, z)
 
     def read_z_data(self):
-        return self.read_16bit_register(CH0DATAL_REGISTER)
+        return self.read_16bit_register(DataRegister.CH0DATAL_REGISTER)
 
     def read_y_data(self):
-        return self.read_16bit_register(CH1DATAL_REGISTER)
+        return self.read_16bit_register(DataRegister.CH1DATAL_REGISTER)
 
     def read_ir1_data(self):
-        return self.read_16bit_register(CH2DATAL_REGISTER)
+        return self.read_16bit_register(DataRegister.CH2DATAL_REGISTER)
 
     def read_x_data(self):
-        return self.read_16bit_register(CH3DATAL_REGISTER)
+        return self.read_16bit_register(DataRegister.CH3DATAL_REGISTER)
