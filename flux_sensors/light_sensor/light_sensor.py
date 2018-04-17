@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from enum import IntEnum
-import smbus2, struct
+from smbus2 import SMBus
 
 
 class BitValues(IntEnum):
@@ -71,7 +71,7 @@ class LightSensor(object):
         """0 = /dev/i2c-0 (port I2C0), 1 = /dev/i2c-1 (port I2C1)"""
         if i2c_port < 0 or i2c_port > 1:
             raise ValueError("Argument I2C-port must be between 0 and 1.")
-        return smbus2.SMBus(i2c_port)
+        return SMBus(i2c_port)
 
     def check_for_initialization(self):
         if not self._is_initialized:

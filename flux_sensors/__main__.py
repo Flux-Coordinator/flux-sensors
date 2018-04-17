@@ -4,16 +4,16 @@ import time
 import datetime
 
 
-def main():
-    """entry point"""
-    initialize_sensors()
-    start_measurement()
-
-
 AMS_LIGHT_SENSOR_I2C_ADDRESS = 0x39
 
 pozyx_localizer = None
 ams_light_sensor = None
+
+
+def main():
+    """entry point"""
+    initialize_sensors()
+    start_measurement()
 
 
 def initialize_sensors():
