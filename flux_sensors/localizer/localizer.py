@@ -77,8 +77,8 @@ class Localizer(object):
     def initialize(self):
         """Sets up the Pozyx for positioning by calibrating its anchor list."""
         self.write_anchors_from_cache_to_device()
-        self.print_anchor_configuration_from_device()
-        self.check_device_configuration
+        self.print_device_configuration()
+        self.check_device_configuration()
         self._is_initialized = True
 
     def write_anchors_from_cache_to_device(self):
@@ -95,7 +95,7 @@ class Localizer(object):
 
     def check_device_configuration(self):
         list_size = SingleRegister()
-        status = self._pozyx.getDeviceListSize(list_size, self._remote_id, self._remote_id)
+        status = self._pozyx.getDeviceListSize(list_size, self._remote_id)
         self.check_for_device_error(status)
         if list_size[0] != len(self._anchors):
             raise DeviceConfigurationError("The anchors configured in cache do not match with the list on the device.")
@@ -115,7 +115,7 @@ class Localizer(object):
     def print_device_info(self):
         self._pozyx.printDeviceInfo(self._remote_id)
 
-    def print_anchor_configuration_from_device(self):
+    def print_device_configuration(self):
         """Prints the anchor configuration from the Pozyx device in a human-readable way."""
         list_size = SingleRegister()
         status = self._pozyx.getDeviceListSize(list_size, self._remote_id)
@@ -126,6 +126,7 @@ class Localizer(object):
         self.check_for_device_error(status)
 
         print("---------------------------------------------")
+        print("POZYX CONFIGURATION:")
         print("Anchors found: {0}".format(list_size[0]))
         print("Anchor IDs: ", device_list)
 
