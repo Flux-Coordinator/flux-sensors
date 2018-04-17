@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-from enum import Enum
+from enum import IntFlag
 import smbus2, struct
 
 
 # Registers and values
-class BitValues(Enum):
+class BitValues(IntFlag):
     BIT_0 = 0b00000001
     BIT_1 = 0b00000010
     BIT_2 = 0b00000100
@@ -32,7 +32,7 @@ CFG1_REGISTER = 0x90  # Configuration register one
 ALS_MULTIPLEXER = BitValues.BIT_3  # Sets the CH3 input. (0=X-Channel (default) / 1=IR2)
 
 
-class AlsGainControl(Enum):
+class AlsGainControl(IntFlag):
     AGAIN_1x = 0b00
     AGAIN_4x = 0b01
     AGAIN_16x = 0b10
