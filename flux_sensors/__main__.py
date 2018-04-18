@@ -6,20 +6,15 @@ import datetime
 
 AMS_LIGHT_SENSOR_I2C_ADDRESS = 0x39
 
-pozyx_localizer = None
-ams_light_sensor = None
-
 
 def main():
     """entry point"""
-    initialize_sensors()
-    start_measurement()
+    localizer_instance = initialize_localizer()
+    light_sensor_instance = initialize_light_sensor()
+    start_measurement(localizer_instance, light_sensor_instance)
 
 
-def initialize_sensors():
-    global pozyx_localizer
-    global ams_light_sensor
-
+def initialize_localizer():
     pozyx = localizer.Localizer.get_device()
     pozyx_localizer = localizer.Localizer(pozyx)
 
@@ -29,19 +24,23 @@ def initialize_sensors():
     pozyx_localizer.add_anchor_to_cache(0x6e62, localizer.Coordinates(7350, 11660, 1590))
 
     pozyx_localizer.initialize()
+    return pozyx_localizer
 
+
+def initialize_light_sensor():
     ams_device = light_sensor.LightSensor.get_device(1)
     ams_light_sensor = light_sensor.LightSensor(AMS_LIGHT_SENSOR_I2C_ADDRESS, ams_device)
 
     ams_light_sensor.initialize()
+    return ams_light_sensor
 
 
-def start_measurement():
+def start_measurement(localizer_instance, light_sensor_instance):
     while True:
         time_stamp = time.time()
         formatted_time_stamp = datetime.datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
-        print("{0}/{1}/{2}".format(formatted_time_stamp, pozyx_localizer.do_positioning(),
-                                   ams_light_sensor.do_measurement()))
+        print("{0}/{1}/{2}".format(formatted_time_stamp, localizer_instance.do_positioning(),
+                                   light_sensor_instance.do_measurement()))
 
 
 if __name__ == "__main__":
