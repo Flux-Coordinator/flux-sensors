@@ -2,13 +2,28 @@ from flux_sensors.localizer import localizer
 from flux_sensors.light_sensor import light_sensor
 import time
 import datetime
-
+import polling
+import requests
 
 AMS_LIGHT_SENSOR_I2C_ADDRESS = 0x39
 
 
 def main():
     """entry point"""
+    start_when_ready()
+
+
+def start_when_ready():
+    polling.poll(
+        lambda: requests.get('https://www.hsr.ch'),
+        check_success=initialize_sensors,
+        step=3,
+        ignore_exceptions=requests.exceptions.ConnectionError,
+        poll_forever=True)
+
+
+def initialize_sensors(response):
+    print("Success! Response: {0}".format(response.status_code))
     pozyx = localizer.Localizer.get_device()
     pozyx_localizer = localizer.Localizer(pozyx)
     initialize_localizer(pozyx_localizer)
