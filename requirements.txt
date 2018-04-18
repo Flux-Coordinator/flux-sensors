@@ -2,3 +2,4 @@ python-osc
 pyserial
 pypozyx
 docopt
+smbus2

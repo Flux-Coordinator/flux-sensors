@@ -28,5 +28,24 @@ The cli command `flux` should be available now.
 
 If the command is not found, `~/.local/bin/` has to be added to the `$PATH`:
 
-- add the line `export PATH=~/.local/bin:$PATH` to `~/.bash_profile`
+- add the line `export PATH=~/.local/bin:$PATH` to `~/.bash_profile`:
+ `echo 'export PATH=~/.local/bin:$PATH' >>~/.bash_profile`
 - then run `source ~/.bash_profile` to reload the profile
+
+## Connect the light sensor
+This project is tested with the [TCS3430](http://ams.com/eng/Products/Light-Sensors/Color-Sensors/TCS3430) light sensor from AMS. Connect the sensor according to the following mapping scheme:
+
+| Raspberry GPIO | Light Sensor |
+|----------------|--------------|
+| Pin 1: 3.3V    | Pin 2 3V0    |
+| Pin 3: SDA     | Pin 4 SDA    |
+| Pin 5: SCL     | Pin 5 SCL    |
+| Pin 6: GND     | Pin 3 GND    |
+
+Check the setup by printing a list of all available I2C-devices:
+
+```
+i2cdetect -y 1
+```
+
+The I2C-address of this sensor should be 0x39.
