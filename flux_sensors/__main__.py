@@ -6,6 +6,7 @@ import polling
 import requests
 
 AMS_LIGHT_SENSOR_I2C_ADDRESS = 0x39
+SERVER_URL = "https://www.hsr.ch"
 
 
 def main():
@@ -15,7 +16,7 @@ def main():
 
 def start_when_ready():
     polling.poll(
-        lambda: requests.get('https://www.hsr.ch'),
+        lambda: requests.get(SERVER_URL),
         check_success=initialize_sensors,
         step=3,
         ignore_exceptions=requests.exceptions.ConnectionError,
@@ -52,8 +53,12 @@ def start_measurement(localizer_instance, light_sensor_instance):
     while True:
         time_stamp = time.time()
         formatted_time_stamp = datetime.datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
-        print("{0}/{1}/{2}".format(formatted_time_stamp, localizer_instance.do_positioning(),
-                                   light_sensor_instance.do_measurement()))
+        position = localizer_instance.do_positioning()
+        illuminance = light_sensor_instance.do_measurement()
+
+        payload = {'timeStamp': formatted_time_stamp, 'position': position, 'illuminance': illuminance}
+        requests.put(SERVER_URL, data=payload)
+        print("{0}/{1}/{2}".format(formatted_time_stamp, position, illuminance))
 
 
 if __name__ == "__main__":
