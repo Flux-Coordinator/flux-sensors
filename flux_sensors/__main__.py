@@ -9,30 +9,28 @@ AMS_LIGHT_SENSOR_I2C_ADDRESS = 0x39
 
 def main():
     """entry point"""
-    localizer_instance = initialize_localizer()
-    light_sensor_instance = initialize_light_sensor()
-    start_measurement(localizer_instance, light_sensor_instance)
-
-
-def initialize_localizer():
     pozyx = localizer.Localizer.get_device()
     pozyx_localizer = localizer.Localizer(pozyx)
+    initialize_localizer(pozyx_localizer)
 
-    pozyx_localizer.add_anchor_to_cache(0x6e4e, localizer.Coordinates(-100, 100, 1150))
-    pozyx_localizer.add_anchor_to_cache(0x6964, localizer.Coordinates(8450, 1200, 2150))
-    pozyx_localizer.add_anchor_to_cache(0x6e5f, localizer.Coordinates(1250, 12000, 1150))
-    pozyx_localizer.add_anchor_to_cache(0x6e62, localizer.Coordinates(7350, 11660, 1590))
-
-    pozyx_localizer.initialize()
-    return pozyx_localizer
-
-
-def initialize_light_sensor():
     ams_device = light_sensor.LightSensor.get_device(1)
     ams_light_sensor = light_sensor.LightSensor(AMS_LIGHT_SENSOR_I2C_ADDRESS, ams_device)
+    initialize_light_sensor(ams_light_sensor)
 
-    ams_light_sensor.initialize()
-    return ams_light_sensor
+    start_measurement(pozyx_localizer, ams_light_sensor)
+
+
+def initialize_localizer(localizer_instance):
+    localizer_instance.add_anchor_to_cache(0x6e4e, localizer.Coordinates(-100, 100, 1150))
+    localizer_instance.add_anchor_to_cache(0x6964, localizer.Coordinates(8450, 1200, 2150))
+    localizer_instance.add_anchor_to_cache(0x6e5f, localizer.Coordinates(1250, 12000, 1150))
+    localizer_instance.add_anchor_to_cache(0x6e62, localizer.Coordinates(7350, 11660, 1590))
+
+    localizer_instance.initialize()
+
+
+def initialize_light_sensor(light_sensor_instance):
+    light_sensor_instance.initialize()
 
 
 def start_measurement(localizer_instance, light_sensor_instance):
