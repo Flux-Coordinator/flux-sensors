@@ -2,6 +2,7 @@
 
 from pypozyx import (Coordinates, DeviceCoordinates, SingleRegister, DeviceList, PozyxConstants,
                      get_first_pozyx_serial_port, PozyxSerial)
+from flux_sensors.models import models
 
 
 class LocalizerError(Exception):
@@ -110,7 +111,7 @@ class Localizer(object):
         status = self._pozyx.doPositioning(
             position, self._dimension, self._height, self._algorithm, remote_id=self._remote_id)
         self.check_for_device_error(status)
-        return "{pos.x};{pos.y};{pos.z}".format(pos=position)
+        return models.Position(position.x, position.y, position.z)
 
     def print_device_info(self):
         self._pozyx.printDeviceInfo(self._remote_id)

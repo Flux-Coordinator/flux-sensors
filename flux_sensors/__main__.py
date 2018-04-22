@@ -1,12 +1,16 @@
 from flux_sensors.localizer import localizer
 from flux_sensors.light_sensor import light_sensor
+from flux_sensors.models import models
 import time
 import datetime
 import polling
 import requests
+import json
 
 AMS_LIGHT_SENSOR_I2C_ADDRESS = 0x39
-SERVER_URL = "https://www.hsr.ch"
+SERVER_URL = "http://localhost:9000"
+CHECK_ACTIVE_MEASUREMENT_ROUTE = "/measurements/active"
+ADD_READINGS_ROUTE = "/measurements/active/readings"
 
 
 def main():
@@ -16,7 +20,7 @@ def main():
 
 def start_when_ready():
     polling.poll(
-        lambda: requests.get(SERVER_URL),
+        lambda: requests.get(SERVER_URL + CHECK_ACTIVE_MEASUREMENT_ROUTE).status_code == 200,
         check_success=initialize_sensors,
         step=3,
         ignore_exceptions=requests.exceptions.ConnectionError,
@@ -51,14 +55,14 @@ def initialize_light_sensor(light_sensor_instance):
 
 def start_measurement(localizer_instance, light_sensor_instance):
     while True:
-        time_stamp = time.time()
-        formatted_time_stamp = datetime.datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
         position = localizer_instance.do_positioning()
         illuminance = light_sensor_instance.do_measurement()
 
-        payload = {'timeStamp': formatted_time_stamp, 'position': position, 'illuminance': illuminance}
-        requests.put(SERVER_URL, data=payload)
-        print("{0}/{1}/{2}".format(formatted_time_stamp, position, illuminance))
+        payload = models.Reading(illuminance, position)
+        json_data = json.dumps(payload.__dict__)
+
+        requests.post(SERVER_URL + ADD_READINGS_ROUTE, json=payload)
+        print(json_data)
 
 
 if __name__ == "__main__":
