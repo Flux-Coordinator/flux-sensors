@@ -3,3 +3,5 @@ pyserial
 pypozyx
 docopt
 smbus2
+requests
+polling

@@ -135,7 +135,7 @@ class LightSensor(object):
         x = self.read_x_data()
         y = self.read_y_data()
         z = self.read_z_data()
-        return "{0};{1};{2}".format(x, y, z)
+        return x + y + z  # todo: implement correct calculation
 
     def read_z_data(self):
         return self.read_16bit_register(DataRegister.CH0DATAL_REGISTER)
