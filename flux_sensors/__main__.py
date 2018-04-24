@@ -7,8 +7,6 @@ import json
 
 AMS_LIGHT_SENSOR_I2C_ADDRESS = 0x39
 SERVER_URL = "http://localhost:9000"
-CHECK_ACTIVE_MEASUREMENT_ROUTE = "/measurements/active"
-ADD_READINGS_ROUTE = "/measurements/active/readings"
 
 
 def main():
@@ -19,21 +17,25 @@ def main():
     ams_device = light_sensor.LightSensor.get_device(1)
     ams_light_sensor = light_sensor.LightSensor(AMS_LIGHT_SENSOR_I2C_ADDRESS, ams_device)
 
-    flux_sensor = FluxSensor(pozyx_localizer, ams_light_sensor)
+    flux_sensor = FluxSensor(pozyx_localizer, ams_light_sensor, SERVER_URL)
     flux_sensor.start_when_ready()
 
 
 class FluxSensor(object):
     """Controlling class for the flux-sensors components"""
 
-    def __init__(self, localizer_instance, light_sensor_instance):
+    CHECK_ACTIVE_MEASUREMENT_ROUTE = "/measurements/active"
+    ADD_READINGS_ROUTE = "/measurements/active/readings"
+
+    def __init__(self, localizer_instance, light_sensor_instance, server_url):
         self._localizer = localizer_instance
         self._light_sensor = light_sensor_instance
+        self._server_url = server_url
         self._check_ready_counter = 0
 
     def start_when_ready(self):
         polling.poll(
-            target=lambda: requests.get(SERVER_URL + CHECK_ACTIVE_MEASUREMENT_ROUTE),
+            target=lambda: requests.get(self._server_url + self.CHECK_ACTIVE_MEASUREMENT_ROUTE),
             check_success=self.check_if_server_ready,
             step=3,
             ignore_exceptions=(requests.exceptions.ConnectionError,),
@@ -76,7 +78,7 @@ class FluxSensor(object):
             json_data = json.dumps(readings, default=lambda o: o.__dict__)
 
             headers = {'content-type': 'application/json'}
-            requests.post(SERVER_URL + ADD_READINGS_ROUTE, data=json_data, headers=headers)
+            requests.post(self._server_url + self.ADD_READINGS_ROUTE, data=json_data, headers=headers)
             print(json_data)
 
 
