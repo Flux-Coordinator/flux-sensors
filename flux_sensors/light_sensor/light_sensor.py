@@ -61,47 +61,47 @@ class SensorNotInitializedError(LightSensorError):
 class LightSensor(object):
     """Interface to control the light sensor"""
 
-    def __init__(self, device_address, device):
+    def __init__(self, device_address: int, device: SMBus) -> None:
         self._bus = device
         self._device_address = device_address
         self._is_initialized = False
 
     @staticmethod
-    def get_device(i2c_port=1):
+    def get_device(i2c_port: int = 1):
         """0 = /dev/i2c-0 (port I2C0), 1 = /dev/i2c-1 (port I2C1)"""
         if i2c_port < 0 or i2c_port > 1:
             raise ValueError("Argument I2C-port must be between 0 and 1.")
         return SMBus(i2c_port)
 
-    def check_for_initialization(self):
+    def check_for_initialization(self) -> None:
         if not self._is_initialized:
             raise SensorNotInitializedError("The light sensor must be initialized to perform measurements")
 
-    def check_register_address(self, register_address):
+    def check_register_address(self, register_address: IntEnum) -> None:
         if register_address < 0x80 or register_address > 0xDD:
             raise ValueError("Register address out of range.")
 
-    def is_initialized(self):
+    def is_initialized(self) -> bool:
         return self._is_initialized
 
-    def read_register(self, register_address):
+    def read_register(self, register_address: IntEnum) -> int:
         self.check_register_address(register_address)
         return self._bus.read_byte_data(self._device_address, register_address)
 
-    def write_register(self, register_address, bit_value):
+    def write_register(self, register_address: IntEnum, bit_value: int) -> None:
         self.check_register_address(register_address)
         self._bus.write_byte_data(self._device_address, register_address, bit_value)
 
-    def read_16bit_register(self, register_address):
+    def read_16bit_register(self, register_address: IntEnum) -> int:
         self.check_register_address(register_address)
         byte_values = self._bus.read_i2c_block_data(self._device_address, register_address, 2)
         return byte_values[1] * 256 + byte_values[0]
 
-    def get_device_id(self):
+    def get_device_id(self) -> int:
         """Returns the 6 Bit Part Number Identification (e.g. 110111=TCS3430)"""
         return self.read_register(ConfigRegister.ID_REGISTER) >> 2
 
-    def initialize(self, atime=53, wtime=0, wlong=0):
+    def initialize(self, atime: int = 53, wtime: int = 0, wlong: int = 0) -> None:
         if atime < 0 or atime > 256:
             raise ValueError("Argument ATIME must be between 0 and 256.")
         elif wtime < 0 or wtime > 256:
@@ -119,10 +119,10 @@ class LightSensor(object):
 
         self._is_initialized = True
 
-    def startup(self):
+    def startup(self) -> None:
         self.write_register(ConfigRegister.ENABLE_REGISTER, ALS_ENABLE | POWER_ON)
 
-    def print_device_configuration(self):
+    def print_device_configuration(self) -> None:
         print("---------------------------------------------")
         print("LIGHT SENSOR CONFIGURATION:")
         for register in ConfigRegister:
@@ -130,21 +130,21 @@ class LightSensor(object):
             print("{0: >16}\t0x{1:02x}\t{2:08b}\t{2}".format(register.name, register.value, configValue))
         print("---------------------------------------------")
 
-    def do_measurement(self):
+    def do_measurement(self) -> float:
         self.check_for_initialization()
         x = self.read_x_data()
         y = self.read_y_data()
         z = self.read_z_data()
         return x + y + z  # todo: implement correct calculation
 
-    def read_z_data(self):
+    def read_z_data(self) -> int:
         return self.read_16bit_register(DataRegister.CH0DATAL_REGISTER)
 
-    def read_y_data(self):
+    def read_y_data(self) -> int:
         return self.read_16bit_register(DataRegister.CH1DATAL_REGISTER)
 
-    def read_ir1_data(self):
+    def read_ir1_data(self) -> int:
         return self.read_16bit_register(DataRegister.CH2DATAL_REGISTER)
 
-    def read_x_data(self):
+    def read_x_data(self) -> int:
         return self.read_16bit_register(DataRegister.CH3DATAL_REGISTER)

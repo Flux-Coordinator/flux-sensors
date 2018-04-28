@@ -27,10 +27,10 @@ mock_ams_register = {
 class TestLightSensor(object):
 
     @pytest.fixture
-    def ams_light_sensor(self):
+    def ams_light_sensor(self) -> LightSensor:
         return LightSensor(0x39, mock_i2c_bus.MockI2CBus(mock_ams_register))
 
-    def test_initialization(self, ams_light_sensor):
+    def test_initialization(self, ams_light_sensor: LightSensor) -> None:
         ams_light_sensor.initialize()
 
         target_ams_register = {
@@ -57,7 +57,7 @@ class TestLightSensor(object):
 
         assert mock_ams_register_json == target_ams_register_json
 
-    def test_measurement(self, ams_light_sensor):
+    def test_measurement(self, ams_light_sensor: LightSensor) -> None:
         ams_light_sensor.initialize()
         illuminance = ams_light_sensor.do_measurement()
         assert illuminance == 19213
