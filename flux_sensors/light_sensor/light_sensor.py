@@ -132,10 +132,8 @@ class LightSensor(object):
 
     def do_measurement(self) -> float:
         self.check_for_initialization()
-        x = self.read_x_data()
         y = self.read_y_data()
-        z = self.read_z_data()
-        return x + y + z  # todo: implement correct calculation
+        return y
 
     def read_z_data(self) -> int:
         return self.read_16bit_register(DataRegister.CH0DATAL_REGISTER)

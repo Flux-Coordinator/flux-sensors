@@ -60,4 +60,4 @@ class TestLightSensor(object):
     def test_measurement(self, ams_light_sensor: LightSensor) -> None:
         ams_light_sensor.initialize()
         illuminance = ams_light_sensor.do_measurement()
-        assert illuminance == 19213
+        assert illuminance == 123
