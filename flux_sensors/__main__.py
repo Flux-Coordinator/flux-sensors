@@ -48,7 +48,7 @@ class FluxSensor(object):
             check_success=self.check_polling_success,
             step=3,
             step_function=self.log_polling_step,
-            ignore_exceptions=(requests.exceptions.ConnectionError,),
+            ignore_exceptions=(requests.exceptions.RequestException,),
             poll_forever=True)
 
     def check_polling_success(self, response: requests.Response) -> bool:
@@ -97,14 +97,18 @@ class FluxSensor(object):
             readings = [reading]
             json_data = json.dumps(readings, default=lambda o: o.__dict__)
 
-            response = self.send_data_to_server(json_data)
-            self.log_server_response(response)
+            try:
+                response = self.send_data_to_server(json_data)
+                self.log_server_response(response)
 
-            if response.status_code == 204:
-                print("The measurement has been stopped by the server.")
-                return
-            elif response.status_code != 200:
-                print("The measurement has been stopped.")
+                if response.status_code == 204:
+                    print("The measurement has been stopped by the server.")
+                    return
+                elif response.status_code != 200:
+                    print("The measurement has been stopped.")
+                    return
+            except requests.exceptions.RequestException as err:
+                print(err)
                 return
 
     def send_data_to_server(self, json_data: str) -> requests.Response:
