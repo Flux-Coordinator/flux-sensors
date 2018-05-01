@@ -84,6 +84,10 @@ class Localizer(object):
         self.check_device_configuration()
         self._is_initialized = True
 
+    def clear(self) -> None:
+        self._is_initialized = False
+        self.clear_anchors_in_cache()
+
     def write_anchors_from_cache_to_device(self) -> None:
         """Adds the cached anchors to the Pozyx's device list one for one."""
         status = self._pozyx.clearDevices(self._remote_id)

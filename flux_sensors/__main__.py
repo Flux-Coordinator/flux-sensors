@@ -26,6 +26,7 @@ def main() -> None:
         print("Success! A flux-server is available and a measurement is active.")
         flux_sensor.initialize_sensors()
         flux_sensor.start_measurement()
+        flux_sensor.clear_sensors()
 
 
 class FluxSensor(object):
@@ -83,6 +84,9 @@ class FluxSensor(object):
 
     def initialize_light_sensor(self) -> None:
         self._light_sensor.initialize()
+
+    def clear_sensors(self) -> None:
+        self._localizer.clear()
 
     def start_measurement(self) -> None:
         while True:
