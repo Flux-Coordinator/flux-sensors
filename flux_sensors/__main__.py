@@ -1,6 +1,7 @@
 from flux_sensors.localizer.localizer import Localizer, Coordinates
 from flux_sensors.light_sensor.light_sensor import LightSensor
 from flux_sensors.models import models
+from http.client import responses
 import polling
 import requests
 import json
@@ -60,12 +61,13 @@ class FluxSensor(object):
         return step
 
     def log_server_response(self, response: requests.Response) -> None:
-        print("Response code: {} ({})".format(response.status_code,
-                                              requests.status_codes._codes[response.status_code][0]))
-        if (response.status_code == 204):
-            print("-> no active measurement available")
-        elif (response.status_code == 400):
-            print("-> check firewall settings or AllowedHostsFilter from flux-server")
+        description = ""
+        if response.status_code == 204:
+            description = " -> no active measurement available"
+        elif response.status_code == 400:
+            description = " -> check firewall settings or AllowedHostsFilter from flux-server"
+        print("Response: {} ({}){}".format(response.status_code, responses[response.status_code],
+                                           description))
 
     def initialize_sensors(self) -> None:
         self.initialize_localizer()
