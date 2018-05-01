@@ -17,7 +17,6 @@ class TestLocalizer(object):
     def test_initialization(self, pozyx_localizer: Localizer) -> None:
         self.add_fake_anchors(pozyx_localizer)
         pozyx_localizer.initialize()
-        assert True
 
     def test_measurement(self, pozyx_localizer: Localizer) -> None:
         self.add_fake_anchors(pozyx_localizer)
