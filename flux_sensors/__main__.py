@@ -84,8 +84,7 @@ class FluxSensor(object):
             illuminance = self._light_sensor.do_measurement()
 
             reading = models.Reading(illuminance, position)
-            readings = []
-            readings.append(reading)
+            readings = [reading]
 
             json_data = json.dumps(readings, default=lambda o: o.__dict__)
 
