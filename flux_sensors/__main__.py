@@ -34,19 +34,31 @@ class FluxSensor(object):
         self._check_ready_counter = 0
 
     def start_when_ready(self) -> None:
+        print("Flux-sensors initialized. Start when server ready...")
         polling.poll(
             target=lambda: requests.get(self._server_url + self.CHECK_ACTIVE_MEASUREMENT_ROUTE),
             check_success=self.check_if_server_ready,
             step=3,
+            step_function=self.log_polling_step,
             ignore_exceptions=(requests.exceptions.ConnectionError,),
             poll_forever=True)
 
         self.initialize_sensors()
         self.start_measurement()
 
-    def check_if_server_ready(self, response: requests.Response) -> int:
+    def log_polling_step(self, step: int) -> int:
         self._check_ready_counter += 1
-        print("Polling flux-server. Try {}".format(self._check_ready_counter))
+        print("Polling Flux-server at {}: {} attempt(s)".format(self._server_url + self.CHECK_ACTIVE_MEASUREMENT_ROUTE,
+                                                                self._check_ready_counter))
+        return step
+
+    def check_if_server_ready(self, response: requests.Response) -> int:
+        print("Response code: {} ({})".format(response.status_code,
+                                              requests.status_codes._codes[response.status_code][0]))
+        if (response.status_code == 204):
+            print("-> no active measurement available")
+        elif (response.status_code == 400):
+            print("-> check firewall settings or AllowedHostsFilter from flux-server")
         return response.status_code == 200
 
     def initialize_sensors(self) -> None:
