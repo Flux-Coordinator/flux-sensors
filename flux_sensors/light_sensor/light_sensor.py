@@ -133,7 +133,7 @@ class LightSensor(object):
     def do_measurement(self) -> float:
         self.check_for_initialization()
         y = self.read_y_data()
-        return y
+        return y  # The tristimulus value Y alone is defined as the luminance.
 
     def read_z_data(self) -> int:
         return self.read_16bit_register(DataRegister.CH0DATAL_REGISTER)
