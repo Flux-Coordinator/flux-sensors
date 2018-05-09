@@ -66,7 +66,7 @@ class FluxSensor:
                 response = self._flux_server.send_data_to_server(json_data)
                 ServerProbe.log_server_response(response)
 
-                if response.status_code == 204:
+                if response.status_code == 404:
                     print("The measurement has been stopped by the server.")
                     return
                 elif response.status_code != 200:
