@@ -54,21 +54,22 @@ class FluxSensor:
         self._localizer.clear()
 
     def start_measurement(self) -> None:
+        readings = []
         while True:
             position = self._localizer.do_positioning()
             illuminance = self._light_sensor.do_measurement()
 
-            reading = models.Reading(illuminance, position)
-            readings = [reading]
-            json_data = json.dumps(readings, default=lambda o: o.__dict__)
+            readings.append(models.Reading(illuminance, position))
 
             try:
-                # if self._flux_server.get_last_response() == 200:
-                self._flux_server.send_data_to_server(json_data)
-                if self._flux_server.get_last_response() == 404:
+                if self._flux_server.get_last_response() == 200:
+                    json_data = json.dumps(readings, default=lambda o: o.__dict__)
+                    self._flux_server.send_data_to_server(json_data)
+                    del readings[:]
+                elif self._flux_server.get_last_response() == 404:
                     print("The measurement has been stopped by the server.")
                     return
-                elif self._flux_server.get_last_response() != 0 and self._flux_server.get_last_response() != 200:
+                elif self._flux_server.get_last_response() != 0:
                     print("The measurement has been stopped.")
                     return
             except requests.exceptions.RequestException as err:
