@@ -8,12 +8,11 @@ from concurrent.futures import Future
 CHECK_SERVER_READY_ROUTE = ""
 CHECK_ACTIVE_MEASUREMENT_ROUTE = "/measurements/active"
 ADD_READINGS_ROUTE = "/measurements/active/readings"
-RESPONSE_PENDING = 0
 
 
 class FluxServer:
-
-
+    RESPONSE_PENDING = 0
+    MIN_BATCH_SIZE = 3
 
     @staticmethod
     def log_server_response(response: requests.Response) -> None:
@@ -83,7 +82,7 @@ class FluxServer:
         return step
 
     def reset_last_response(self):
-        self._last_response = RESPONSE_PENDING
+        self._last_response = self.RESPONSE_PENDING
 
     def get_last_response(self):
         return self._last_response
