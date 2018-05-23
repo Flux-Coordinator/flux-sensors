@@ -2,7 +2,7 @@ from flux_sensors.localizer.localizer import Localizer
 from flux_sensors.light_sensor.light_sensor import LightSensor
 from flux_sensors.flux_sensor import FluxSensor
 from flux_sensors.config_loader import ConfigLoader
-from flux_sensors.server_probe import ServerProbe
+from flux_sensors.flux_server import FluxServer
 
 AMS_LIGHT_SENSOR_I2C_ADDRESS = 0x39
 
@@ -17,7 +17,7 @@ def main() -> None:
 
     config_loader = ConfigLoader()
 
-    flux_server = ServerProbe()
+    flux_server = FluxServer()
 
     flux_sensor = FluxSensor(pozyx_localizer, ams_light_sensor, config_loader, flux_server)
     flux_sensor.start_when_ready()

@@ -2,13 +2,18 @@ from typing import List, Optional
 import polling
 from http.client import responses
 import requests
+from requests_futures.sessions import FuturesSession
+from concurrent.futures import Future
 
 CHECK_SERVER_READY_ROUTE = ""
 CHECK_ACTIVE_MEASUREMENT_ROUTE = "/measurements/active"
 ADD_READINGS_ROUTE = "/measurements/active/readings"
+RESPONSE_PENDING = 0
 
 
-class ServerProbe:
+class FluxServer:
+
+
 
     @staticmethod
     def log_server_response(response: requests.Response) -> None:
@@ -24,6 +29,8 @@ class ServerProbe:
         self._check_ready_counter = 0
         self._server_url = ""
         self._poll_route = ""
+        self._session = FuturesSession()
+        self._last_response = 200
 
     def poll_server_urls(self, server_urls: List[str], timeout: Optional[int] = 10) -> bool:
         for server_url in server_urls:
@@ -75,7 +82,17 @@ class ServerProbe:
                                                            self._check_ready_counter))
         return step
 
-    def send_data_to_server(self, json_data: str) -> requests.Response:
+    def reset_last_response(self):
+        self._last_response = RESPONSE_PENDING
+
+    def get_last_response(self):
+        return self._last_response
+
+    def _post_callback(self, sess: FuturesSession, resp: requests.Response):
+        self._last_response = resp.status_code
+        self.log_server_response(resp)
+
+    def send_data_to_server(self, json_data: str) -> Future:
         print("Sending: {}".format(json_data))
         headers = {'content-type': 'application/json'}
-        return requests.post(self._server_url + ADD_READINGS_ROUTE, data=json_data, headers=headers)
+        return self._session.post(self._server_url + ADD_READINGS_ROUTE, data=json_data, headers=headers, background_callback=self._post_callback)

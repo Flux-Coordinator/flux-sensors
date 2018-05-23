@@ -4,4 +4,6 @@ pypozyx
 docopt
 smbus2
 requests
+requests-futures
+futures>=2.1.3
 polling
