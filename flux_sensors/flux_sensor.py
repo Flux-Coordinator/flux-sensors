@@ -63,6 +63,7 @@ class FluxSensor:
 
             try:
                 if self._flux_server.get_last_response() == 200:
+                    self._flux_server.reset_last_response()
                     json_data = json.dumps(readings, default=lambda o: o.__dict__)
                     self._flux_server.send_data_to_server(json_data)
                     del readings[:]
