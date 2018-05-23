@@ -94,4 +94,5 @@ class FluxServer:
     def send_data_to_server(self, json_data: str) -> Future:
         print("Sending: {}".format(json_data))
         headers = {'content-type': 'application/json'}
-        return self._session.post(self._server_url + ADD_READINGS_ROUTE, data=json_data, headers=headers, background_callback=self._post_callback)
+        return self._session.post(self._server_url + ADD_READINGS_ROUTE, data=json_data, headers=headers,
+                                  background_callback=self._post_callback)
