@@ -1,7 +1,7 @@
 from flux_sensors.localizer.localizer import Localizer, Coordinates
 from flux_sensors.light_sensor.light_sensor import LightSensor
 from flux_sensors.config_loader import ConfigLoader
-from flux_sensors.server_probe import ServerProbe
+from flux_sensors.flux_server import FluxServer
 from flux_sensors.models import models
 import requests
 import json
@@ -11,7 +11,7 @@ class FluxSensor:
     """Controlling class for the flux-sensors components"""
 
     def __init__(self, localizer_instance: Localizer, light_sensor_instance: LightSensor, config_loader: ConfigLoader,
-                 flux_server: ServerProbe) -> None:
+                 flux_server: FluxServer) -> None:
         self._localizer = localizer_instance
         self._light_sensor = light_sensor_instance
         self._config_loader = config_loader
@@ -54,22 +54,24 @@ class FluxSensor:
         self._localizer.clear()
 
     def start_measurement(self) -> None:
+        readings = []
         while True:
             position = self._localizer.do_positioning()
             illuminance = self._light_sensor.do_measurement()
 
-            reading = models.Reading(illuminance, position)
-            readings = [reading]
-            json_data = json.dumps(readings, default=lambda o: o.__dict__)
+            readings.append(models.Reading(illuminance, position))
 
             try:
-                response = self._flux_server.send_data_to_server(json_data)
-                ServerProbe.log_server_response(response)
-
-                if response.status_code == 404:
+                if self._flux_server.get_last_response() == 200:
+                    if len(readings) >= self._flux_server.MIN_BATCH_SIZE:
+                        self._flux_server.reset_last_response()
+                        json_data = json.dumps(readings, default=lambda o: o.__dict__)
+                        self._flux_server.send_data_to_server(json_data)
+                        del readings[:]
+                elif self._flux_server.get_last_response() == 404:
                     print("The measurement has been stopped by the server.")
                     return
-                elif response.status_code != 200:
+                elif self._flux_server.get_last_response() != self._flux_server.RESPONSE_PENDING:
                     print("The measurement has been stopped.")
                     return
             except requests.exceptions.RequestException as err:
