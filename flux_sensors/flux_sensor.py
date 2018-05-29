@@ -90,6 +90,7 @@ class FluxSensor:
 
     def start_measurement(self) -> None:
         readings = []
+        self._flux_server.initialize_last_response()
         while True:
             position = self._localizer.do_positioning()
             illuminance = self._light_sensor.do_measurement()
