@@ -72,7 +72,6 @@ class FluxSensor:
     def initialize_localizer(self, measurement: str) -> None:
         try:
             measurement_json = json.loads(measurement)
-            print("test start:")
             for anchorPosition in measurement_json["anchorPositions"]:
                 self._localizer.add_anchor_to_cache(int(anchorPosition["anchor"]["networkId"], 16),
                                                     Coordinates(int(anchorPosition["xposition"]),
