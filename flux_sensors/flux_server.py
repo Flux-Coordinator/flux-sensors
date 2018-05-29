@@ -81,6 +81,9 @@ class FluxServer:
                                                            self._check_ready_counter))
         return step
 
+    def get_active_measurement(self) -> requests.Response:
+        return requests.get(self._server_url + CHECK_ACTIVE_MEASUREMENT_ROUTE)
+
     def reset_last_response(self):
         self._last_response = self.RESPONSE_PENDING
 
