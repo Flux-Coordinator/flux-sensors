@@ -3,8 +3,17 @@ from flux_sensors.light_sensor.light_sensor import LightSensor
 from flux_sensors.config_loader import ConfigLoader
 from flux_sensors.flux_server import FluxServer
 from flux_sensors.models import models
+import time
 import requests
 import json
+
+
+class FluxSensorError(Exception):
+    """Base class for exceptions in this module."""
+
+
+class InitializationError(FluxSensorError):
+    """Exception raised when the initialization of the sensors failed."""
 
 
 class FluxSensor:
@@ -30,20 +39,46 @@ class FluxSensor:
                 continue
             print("Success! A flux-server is available and a measurement is active.")
 
-            self.initialize_sensors()
+            try:
+                response = self._flux_server.get_active_measurement()
+                self._flux_server.log_server_response(response)
+            except requests.exceptions.RequestException as err:
+                print("Request error while loading active measurement from Flux-server")
+                print(err)
+                FluxSensor.handle_retry(3)
+                continue
+
+            try:
+                self.initialize_sensors(response.text)
+            except InitializationError as err:
+                print("Error while initializing the sensors")
+                print(err)
+                FluxSensor.handle_retry(3)
+                continue
+
             print("Flux-sensors initialized. Start measurement...")
             self.start_measurement()
             self.clear_sensors()
 
-    def initialize_sensors(self) -> None:
-        self.initialize_localizer()
+    @staticmethod
+    def handle_retry(seconds: int) -> None:
+        print("Retry starts in {} seconds...".format(seconds))
+        time.sleep(seconds)
+
+    def initialize_sensors(self, measurement: str) -> None:
+        self.initialize_localizer(measurement)
         self.initialize_light_sensor()
 
-    def initialize_localizer(self) -> None:
-        self._localizer.add_anchor_to_cache(0x6e4e, Coordinates(-100, 100, 1150))
-        self._localizer.add_anchor_to_cache(0x6964, Coordinates(8450, 1200, 2150))
-        self._localizer.add_anchor_to_cache(0x6e5f, Coordinates(1250, 12000, 1150))
-        self._localizer.add_anchor_to_cache(0x6e62, Coordinates(7350, 11660, 1590))
+    def initialize_localizer(self, measurement: str) -> None:
+        try:
+            measurement_json = json.loads(measurement)
+            for anchorPosition in measurement_json["anchorPositions"]:
+                self._localizer.add_anchor_to_cache(int(anchorPosition["anchor"]["networkId"], 16),
+                                                    Coordinates(int(anchorPosition["xposition"]),
+                                                                int(anchorPosition["yposition"]),
+                                                                int(anchorPosition["zposition"])))
+        except(ValueError, KeyError, TypeError):
+            raise InitializationError("Error while parsing the Pozyx Anchors.")
 
         self._localizer.initialize()
 
@@ -55,6 +90,7 @@ class FluxSensor:
 
     def start_measurement(self) -> None:
         readings = []
+        self._flux_server.initialize_last_response()
         while True:
             position = self._localizer.do_positioning()
             illuminance = self._light_sensor.do_measurement()
