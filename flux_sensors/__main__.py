@@ -1,3 +1,5 @@
+import sys
+import logging
 from flux_sensors.localizer.localizer import Localizer
 from flux_sensors.light_sensor.light_sensor import LightSensor
 from flux_sensors.flux_sensor import FluxSensor
@@ -6,9 +8,28 @@ from flux_sensors.flux_server import FluxServer
 
 AMS_LIGHT_SENSOR_I2C_ADDRESS = 0x39
 
+logger = logging.getLogger('flux_sensors')
+
+
+def setup_logging(verbose=False, quiet=False):
+    logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('[%(levelname)-7s] - %(message)s')
+    if quiet:
+        logger.setLevel(logging.WARNING)
+    elif verbose:
+        logger.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - [%(levelname)-7s] - %(message)s')
+
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
 
 def main() -> None:
     """entry point"""
+    setup_logging(verbose=False)
+
     pozyx = Localizer.get_device()
     pozyx_localizer = Localizer(pozyx)
 

@@ -6,6 +6,9 @@ from flux_sensors.models import models
 import time
 import requests
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class FluxSensorError(Exception):
@@ -27,42 +30,42 @@ class FluxSensor:
         self._flux_server = flux_server
 
     def start_when_ready(self) -> None:
-        print("Flux-sensors in standby. Start polling Flux-server")
+        logger.info("Flux-sensors in standby. Start polling Flux-server")
         while True:
             if not self._flux_server.poll_server_urls(self._config_loader.get_server_urls(),
                                                       self._config_loader.get_timeout()):
-                print("All server URLs failed to respond. Retry started...")
+                logger.warning("All server URLs failed to respond. Retry started...")
                 continue
-            print("Server responding. Start measurement when ready...")
+            logger.info("Server responding. Start measurement when ready...")
 
             if not self._flux_server.poll_active_measurement():
                 continue
-            print("Success! A flux-server is available and a measurement is active.")
+            logger.info("Success! A flux-server is available and a measurement is active.")
 
             try:
                 response = self._flux_server.get_active_measurement()
                 self._flux_server.log_server_response(response)
             except requests.exceptions.RequestException as err:
-                print("Request error while loading active measurement from Flux-server")
-                print(err)
+                logger.error("Request error while loading active measurement from Flux-server")
+                logger.error(err)
                 FluxSensor.handle_retry(3)
                 continue
 
             try:
                 self.initialize_sensors(response.text)
             except InitializationError as err:
-                print("Error while initializing the sensors")
-                print(err)
+                logger.error("Error while initializing the sensors")
+                logger.error(err)
                 FluxSensor.handle_retry(3)
                 continue
 
-            print("Flux-sensors initialized. Start measurement...")
+            logger.info("Flux-sensors initialized. Start measurement...")
             self.start_measurement()
             self.clear_sensors()
 
     @staticmethod
     def handle_retry(seconds: int) -> None:
-        print("Retry starts in {} seconds...".format(seconds))
+        logger.info("Retry starts in {} seconds...".format(seconds))
         time.sleep(seconds)
 
     def initialize_sensors(self, measurement: str) -> None:
@@ -105,11 +108,11 @@ class FluxSensor:
                         self._flux_server.send_data_to_server(json_data)
                         del readings[:]
                 elif self._flux_server.get_last_response() == 404:
-                    print("The measurement has been stopped by the server.")
+                    logger.info("The measurement has been stopped by the server.")
                     return
                 elif self._flux_server.get_last_response() != self._flux_server.RESPONSE_PENDING:
-                    print("The measurement has been stopped.")
+                    logger.info("The measurement has been stopped.")
                     return
             except requests.exceptions.RequestException as err:
-                print(err)
+                logger.error(err)
                 return
