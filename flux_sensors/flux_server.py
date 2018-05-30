@@ -4,10 +4,13 @@ from http.client import responses
 import requests
 from requests_futures.sessions import FuturesSession
 from concurrent.futures import Future
+import logging
 
 CHECK_SERVER_READY_ROUTE = ""
 CHECK_ACTIVE_MEASUREMENT_ROUTE = "/measurements/active"
 ADD_READINGS_ROUTE = "/measurements/active/readings"
+
+logger = logging.getLogger(__name__)
 
 
 class FluxServer:
@@ -21,7 +24,7 @@ class FluxServer:
             description = " -> no active measurement available"
         elif response.status_code == 400:
             description = " -> check firewall settings or AllowedHostsFilter from flux-server"
-        print("Response: {} ({}){}".format(response.status_code, responses[response.status_code],
+        logger.info("Response: {} ({}){}".format(response.status_code, responses[response.status_code],
                                            description))
 
     def __init__(self) -> None:
@@ -46,7 +49,7 @@ class FluxServer:
         self._server_url = server_url
         self._poll_route = route
 
-        print("Polling Flux-server at {}".format(self._server_url + self._poll_route))
+        logger.info("Polling Flux-server at {}".format(self._server_url + self._poll_route))
 
         ignore_exceptions = (requests.exceptions.RequestException,)
         poll_forever = False
@@ -64,7 +67,7 @@ class FluxServer:
                 timeout=timeout,
                 poll_forever=poll_forever)
         except polling.TimeoutException:
-            print("Polling timeout ({}s) exceeded.".format(timeout))
+            logger.error("Polling timeout ({}s) exceeded.".format(timeout))
             return False
         except requests.exceptions.RequestException as re:
             self.log_server_response(re.response)
@@ -77,7 +80,7 @@ class FluxServer:
 
     def _log_polling_step(self, step: int) -> int:
         self._check_ready_counter += 1
-        print("Polling Flux-server at {}: retry {}".format(self._server_url + self._poll_route,
+        logger.info("Polling Flux-server at {}: retry {}".format(self._server_url + self._poll_route,
                                                            self._check_ready_counter))
         return step
 
@@ -98,7 +101,7 @@ class FluxServer:
         self.log_server_response(resp)
 
     def send_data_to_server(self, json_data: str) -> Future:
-        print("Sending: {}".format(json_data))
+        logger.info("Sending: {}".format(json_data))
         headers = {'content-type': 'application/json'}
         return self._session.post(self._server_url + ADD_READINGS_ROUTE, data=json_data, headers=headers,
                                   background_callback=self._post_callback)
