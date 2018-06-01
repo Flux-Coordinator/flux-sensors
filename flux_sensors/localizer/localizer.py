@@ -31,7 +31,9 @@ class Localizer(object):
 
     def __init__(self, pozyx: PozyxSerial, anchors: List[DeviceCoordinates] = None,
                  dimension: PozyxConstants = PozyxConstants.POZYX_3D, height: int = 1000,
-                 algorithm: PozyxConstants = PozyxConstants.POZYX_POS_ALG_UWB_ONLY, remote_id: int = None) -> None:
+                 algorithm: PozyxConstants = PozyxConstants.POZYX_POS_ALG_TRACKING,
+                 position_filter: PozyxConstants = PozyxConstants.FILTER_TYPE_MOVINGMEDIAN, filter_strength: int = 3,
+                 remote_id: int = None) -> None:
         self._pozyx = pozyx
         self._anchors = []
         if anchors is not None:
@@ -39,6 +41,8 @@ class Localizer(object):
         self._dimension = dimension
         self._height = height
         self._algorithm = algorithm
+        self._position_filter = position_filter
+        self._filter_strength = filter_strength
         self._remote_id = remote_id
         self._is_initialized = False
 
@@ -80,6 +84,7 @@ class Localizer(object):
     def initialize(self) -> None:
         """Sets up the Pozyx for positioning by calibrating its anchor list."""
         self.write_anchors_from_cache_to_device()
+        self._pozyx.setPositionFilter(self._position_filter, self._filter_strength, self._remote_id)
         self.print_device_configuration()
         self.check_device_configuration()
         self._is_initialized = True

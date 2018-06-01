@@ -1,5 +1,6 @@
 from typing import List
-from pypozyx import (PozyxSerial, PozyxConstants, PozyxConnectionError, SingleRegister, Data, Coordinates, DeviceCoordinates, DeviceList)
+from pypozyx import (PozyxSerial, PozyxConstants, PozyxConnectionError, SingleRegister, Data, Coordinates,
+                     DeviceCoordinates, DeviceList)
 from flux_sensors.models import models
 
 
@@ -43,7 +44,7 @@ class MockPozyx(PozyxSerial):
         return self._state
 
     def doPositioning(self, position: Coordinates, dimension: int = PozyxConstants.POZYX_3D, height: int = 0,
-                      algorithm: int = PozyxConstants.POZYX_POS_ALG_UWB_ONLY,
+                      algorithm: int = PozyxConstants.POZYX_POS_ALG_TRACKING,
                       remote_id: int = None) -> PozyxConstants:
         pos = [self._position.get_x(), self._position.get_y(), self._position.get_z()]
         position.load(pos)
@@ -51,6 +52,10 @@ class MockPozyx(PozyxSerial):
 
     def printDeviceInfo(self, remote_id: int = None) -> None:
         pass
+
+    def setPositionFilter(self, position_filter: PozyxConstants, filter_strength: int,
+                          remote_id: int = None) -> PozyxConstants:
+        return PozyxConstants.POZYX_SUCCESS
 
     def getDeviceIds(self, device_list: DeviceList, remote_id: int = None) -> PozyxConstants:
         device_ids = []

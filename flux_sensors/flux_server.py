@@ -25,7 +25,7 @@ class FluxServer:
         elif response.status_code == 400:
             description = " -> check firewall settings or AllowedHostsFilter from flux-server"
         logger.info("Response: {} ({}){}".format(response.status_code, responses[response.status_code],
-                                           description))
+                                                 description))
 
     def __init__(self) -> None:
         self._check_ready_counter = 0
@@ -34,7 +34,7 @@ class FluxServer:
         self._session = FuturesSession()
         self._last_response = 200
 
-    def poll_server_urls(self, server_urls: List[str], timeout: Optional[int] = 10) -> bool:
+    def poll_server_urls(self, server_urls: List[str], timeout: Optional[int] = 3) -> bool:
         for server_url in server_urls:
             if self._poll_server_route(server_url, CHECK_SERVER_READY_ROUTE, timeout):
                 self._server_url = server_url
@@ -61,7 +61,7 @@ class FluxServer:
             polling.poll(
                 target=lambda: requests.get(server_url + route),
                 check_success=self._check_polling_success,
-                step=3,
+                step=2,
                 step_function=self._log_polling_step,
                 ignore_exceptions=ignore_exceptions,
                 timeout=timeout,
@@ -81,7 +81,7 @@ class FluxServer:
     def _log_polling_step(self, step: int) -> int:
         self._check_ready_counter += 1
         logger.info("Polling Flux-server at {}: retry {}".format(self._server_url + self._poll_route,
-                                                           self._check_ready_counter))
+                                                                 self._check_ready_counter))
         return step
 
     def get_active_measurement(self) -> requests.Response:
