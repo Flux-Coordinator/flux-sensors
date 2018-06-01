@@ -34,7 +34,7 @@ class FluxServer:
         self._session = FuturesSession()
         self._last_response = 200
 
-    def poll_server_urls(self, server_urls: List[str], timeout: Optional[int] = 10) -> bool:
+    def poll_server_urls(self, server_urls: List[str], timeout: Optional[int] = 3) -> bool:
         for server_url in server_urls:
             if self._poll_server_route(server_url, CHECK_SERVER_READY_ROUTE, timeout):
                 self._server_url = server_url
@@ -61,7 +61,7 @@ class FluxServer:
             polling.poll(
                 target=lambda: requests.get(server_url + route),
                 check_success=self._check_polling_success,
-                step=3,
+                step=2,
                 step_function=self._log_polling_step,
                 ignore_exceptions=ignore_exceptions,
                 timeout=timeout,
