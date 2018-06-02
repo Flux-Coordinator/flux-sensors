@@ -139,12 +139,9 @@ class Localizer(object):
 
         print("---------------------------------------------")
         print("POZYX CONFIGURATION:")
-        print("Anchors found: {0}".format(list_size[0]))
-        print("Anchor IDs: ", device_list)
-
-        for i in range(list_size[0]):
-            anchor_coordinates = Coordinates()
-            status = self._pozyx.getDeviceCoordinates(device_list[i], anchor_coordinates, self._remote_id)
-            self.check_for_device_error(status)
-            print("ANCHOR, 0x%0.4x, %s" % (device_list[i], str(anchor_coordinates)))
+        self._pozyx.printDeviceInfo(remote_id=self._remote_id)
+        print("- Configured Devices:")
+        self._pozyx.printDeviceList(remote_id=self._remote_id)
+        print("- Discovered Anchors:")
+        self._pozyx.doDiscovery(remote_id=self._remote_id)
         print("---------------------------------------------")
