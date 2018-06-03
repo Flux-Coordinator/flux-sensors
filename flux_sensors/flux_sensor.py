@@ -1,4 +1,4 @@
-from flux_sensors.localizer.localizer import Localizer, Coordinates, PozyxDeviceError
+from flux_sensors.localizer.localizer import Localizer, Coordinates, LocalizerError, PozyxDeviceError
 from flux_sensors.light_sensor.light_sensor import LightSensor
 from flux_sensors.config_loader import ConfigLoader
 from flux_sensors.flux_server import FluxServer
@@ -52,16 +52,16 @@ class FluxSensor:
                 continue
 
             try:
+                self.clear_sensors()
                 self.initialize_sensors(response.text)
             except InitializationError as err:
-                logger.error("Error while initializing the sensors")
                 logger.error(err)
+                logger.error("Error while initializing the sensors")
                 FluxSensor.handle_retry(3)
                 continue
 
             logger.info("Flux-sensors initialized. Start measurement...")
             self.start_measurement()
-            self.clear_sensors()
 
     @staticmethod
     def handle_retry(seconds: int) -> None:
@@ -83,7 +83,12 @@ class FluxSensor:
         except(ValueError, KeyError, TypeError):
             raise InitializationError("Error while parsing the Pozyx Anchors.")
 
-        self._localizer.initialize()
+        try:
+            self._localizer.initialize()
+        except LocalizerError as err:
+            logger.error(err)
+            raise InitializationError("Error while initializing Pozyx.")
+
 
     def initialize_light_sensor(self) -> None:
         self._light_sensor.initialize()

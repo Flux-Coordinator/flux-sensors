@@ -5,6 +5,7 @@ from pypozyx import (Coordinates, DeviceCoordinates, SingleRegister, DeviceList,
                      get_first_pozyx_serial_port, PozyxSerial)
 from flux_sensors.models import models
 
+NUMBER_OF_CALIBRATION_CYCLES = 10
 
 class LocalizerError(Exception):
     """Base class for exceptions in this module."""
@@ -88,6 +89,11 @@ class Localizer(object):
         self.print_device_configuration()
         self.check_device_configuration()
         self._is_initialized = True
+        self.calibratePositioning()
+
+    def calibratePositioning(self) -> None:
+        for i in range(0, NUMBER_OF_CALIBRATION_CYCLES):
+            self.do_positioning()
 
     def clear(self) -> None:
         self._is_initialized = False
