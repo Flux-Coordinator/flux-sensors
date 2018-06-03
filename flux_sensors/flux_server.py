@@ -70,8 +70,11 @@ class FluxServer:
             logger.error("Polling timeout ({}s) exceeded.".format(timeout))
             return False
         except requests.exceptions.RequestException as re:
-            self.log_server_response(re.response)
+            logger.error("Error: RequestException {}".format(str(re)))
+            if re.response is not None:
+                self.log_server_response(re.response)
             return False
+
         return True
 
     def _check_polling_success(self, response: requests.Response) -> bool:
