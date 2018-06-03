@@ -142,6 +142,4 @@ class Localizer(object):
         self._pozyx.printDeviceInfo(remote_id=self._remote_id)
         print("- Configured Devices:")
         self._pozyx.printDeviceList(remote_id=self._remote_id)
-        print("- Discovered Anchors:")
-        self._pozyx.doDiscovery(remote_id=self._remote_id)
         print("---------------------------------------------")
