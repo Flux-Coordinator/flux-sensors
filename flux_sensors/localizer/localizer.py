@@ -5,6 +5,7 @@ from pypozyx import (Coordinates, DeviceCoordinates, SingleRegister, DeviceList,
                      get_first_pozyx_serial_port, PozyxSerial)
 from flux_sensors.models import models
 
+NUMBER_OF_CALIBRATION_CYCLES = 10
 
 class LocalizerError(Exception):
     """Base class for exceptions in this module."""
@@ -88,6 +89,11 @@ class Localizer(object):
         self.print_device_configuration()
         self.check_device_configuration()
         self._is_initialized = True
+        self.calibratePositioning()
+
+    def calibratePositioning(self) -> None:
+        for i in range(0, NUMBER_OF_CALIBRATION_CYCLES):
+            self.do_positioning()
 
     def clear(self) -> None:
         self._is_initialized = False
@@ -139,12 +145,7 @@ class Localizer(object):
 
         print("---------------------------------------------")
         print("POZYX CONFIGURATION:")
-        print("Anchors found: {0}".format(list_size[0]))
-        print("Anchor IDs: ", device_list)
-
-        for i in range(list_size[0]):
-            anchor_coordinates = Coordinates()
-            status = self._pozyx.getDeviceCoordinates(device_list[i], anchor_coordinates, self._remote_id)
-            self.check_for_device_error(status)
-            print("ANCHOR, 0x%0.4x, %s" % (device_list[i], str(anchor_coordinates)))
+        self._pozyx.printDeviceInfo(remote_id=self._remote_id)
+        print("- Configured Devices:")
+        self._pozyx.printDeviceList(remote_id=self._remote_id)
         print("---------------------------------------------")

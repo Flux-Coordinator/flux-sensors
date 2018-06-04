@@ -1,4 +1,4 @@
-from flux_sensors.localizer.localizer import Localizer, Coordinates
+from flux_sensors.localizer.localizer import Localizer, Coordinates, LocalizerError, PozyxDeviceError
 from flux_sensors.light_sensor.light_sensor import LightSensor
 from flux_sensors.config_loader import ConfigLoader
 from flux_sensors.flux_server import FluxServer
@@ -52,16 +52,16 @@ class FluxSensor:
                 continue
 
             try:
+                self.clear_sensors()
                 self.initialize_sensors(response.text)
             except InitializationError as err:
-                logger.error("Error while initializing the sensors")
                 logger.error(err)
+                logger.error("Error while initializing the sensors")
                 FluxSensor.handle_retry(3)
                 continue
 
             logger.info("Flux-sensors initialized. Start measurement...")
             self.start_measurement()
-            self.clear_sensors()
 
     @staticmethod
     def handle_retry(seconds: int) -> None:
@@ -83,7 +83,12 @@ class FluxSensor:
         except(ValueError, KeyError, TypeError):
             raise InitializationError("Error while parsing the Pozyx Anchors.")
 
-        self._localizer.initialize()
+        try:
+            self._localizer.initialize()
+        except LocalizerError as err:
+            logger.error(err)
+            raise InitializationError("Error while initializing Pozyx.")
+
 
     def initialize_light_sensor(self) -> None:
         self._light_sensor.initialize()
@@ -95,24 +100,28 @@ class FluxSensor:
         readings = []
         self._flux_server.initialize_last_response()
         while True:
-            position = self._localizer.do_positioning()
-            illuminance = self._light_sensor.do_measurement()
-
-            readings.append(models.Reading(illuminance, position))
-
             try:
-                if self._flux_server.get_last_response() == 200:
-                    if len(readings) >= self._flux_server.MIN_BATCH_SIZE:
-                        self._flux_server.reset_last_response()
-                        json_data = json.dumps(readings, default=lambda o: o.__dict__)
-                        self._flux_server.send_data_to_server(json_data)
-                        del readings[:]
-                elif self._flux_server.get_last_response() == 404:
-                    logger.info("The measurement has been stopped by the server.")
+                position = self._localizer.do_positioning()
+                illuminance = self._light_sensor.do_measurement()
+
+                readings.append(models.Reading(illuminance, position))
+
+                try:
+                    if self._flux_server.get_last_response() == 200:
+                        if len(readings) >= self._flux_server.MIN_BATCH_SIZE:
+                            self._flux_server.reset_last_response()
+                            json_data = json.dumps(readings, default=lambda o: o.__dict__)
+                            self._flux_server.send_data_to_server(json_data)
+                            del readings[:]
+                    elif self._flux_server.get_last_response() == 404:
+                        logger.info("The measurement has been stopped by the server.")
+                        return
+                    elif self._flux_server.get_last_response() != self._flux_server.RESPONSE_PENDING:
+                        logger.info("The measurement has been stopped.")
+                        return
+                except requests.exceptions.RequestException as err:
+                    logger.error(err)
                     return
-                elif self._flux_server.get_last_response() != self._flux_server.RESPONSE_PENDING:
-                    logger.info("The measurement has been stopped.")
-                    return
-            except requests.exceptions.RequestException as err:
+            except PozyxDeviceError as err:
                 logger.error(err)
-                return
+                continue
