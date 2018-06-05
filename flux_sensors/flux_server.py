@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 class FluxServer:
     RESPONSE_PENDING = 0
     MIN_BATCH_SIZE = 3
+    SENSOR_DEVICE_HEADER = "X-Flux-Sensor"
 
     @staticmethod
     def log_server_response(response: requests.Response) -> None:
@@ -51,6 +52,7 @@ class FluxServer:
 
         logger.info("Polling Flux-server at {}".format(self._server_url + self._poll_route))
 
+        headers = {FluxServer.SENSOR_DEVICE_HEADER: ''}
         ignore_exceptions = (requests.exceptions.RequestException,)
         poll_forever = False
         if timeout is None:
@@ -59,7 +61,7 @@ class FluxServer:
 
         try:
             polling.poll(
-                target=lambda: requests.get(server_url + route),
+                target=lambda: requests.get(server_url + route, headers=headers),
                 check_success=self._check_polling_success,
                 step=2,
                 step_function=self._log_polling_step,
@@ -105,6 +107,6 @@ class FluxServer:
 
     def send_data_to_server(self, json_data: str) -> Future:
         logger.info("Sending: {}".format(json_data))
-        headers = {'content-type': 'application/json'}
+        headers = {'content-type': 'application/json', FluxServer.SENSOR_DEVICE_HEADER: ''}
         return self._session.post(self._server_url + ADD_READINGS_ROUTE, data=json_data, headers=headers,
                                   background_callback=self._post_callback)
