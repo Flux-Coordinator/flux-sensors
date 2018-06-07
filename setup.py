@@ -17,8 +17,8 @@ setup(
     url='https://github.com/Flux-Coordinator/flux-sensors',
     license=license,
     packages=find_packages(exclude=('tests', 'docs')),
-    install_requires=['python-osc', 'pyserial', 'pypozyx', 'docopt', 'smbus2', 'requests', 'requests-futures',
-                      'futures', 'polling', 'futures'],
+    install_requires=['python-osc==1.6.6', 'pyserial==3.4', 'pypozyx==1.1.7', 'docopt==0.6.2', 'smbus2==0.2.0', 'requests==2.18.4', 'requests-futures==0.9.7',
+                      'futures==3.1.1', 'polling==0.3.0'],
     entry_points={
         'console_scripts': [
             'flux=flux_sensors.__main__:main'
