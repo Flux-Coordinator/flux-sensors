@@ -90,3 +90,22 @@ i2cdetect -y 1
 ```
 
 The I2C-address of this sensor should be 0x39.
+
+## Configure the server connections
+Crete a config file called flux-config.ini at /home/pi/.config:
+```
+sudo nano /home/pi/.config/flux-config.ini
+``` 
+Add the following content:
+```
+[Flux Server URLs]
+LAN=http://192.168.1.104:9000
+CLOUD=https://flux-server-staging.herokuapp.com/
+LOCAL=http://localhost:9000
+
+[Flux Server Connection Settings]
+timeout=5
+```
+The names of the urls can be chosen freely. The script will go through the urls from top to bottom until it gets an answer.
+
+The timeout defines the maximum time to try connecting a url. It is set in whole seconds.
