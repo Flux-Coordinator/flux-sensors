@@ -100,7 +100,7 @@ Add the following content:
 ```
 [Flux Server URLs]
 LAN=http://192.168.1.104:9000
-CLOUD=https://flux-server-staging.herokuapp.com/
+CLOUD=https://flux-server-staging.herokuapp.com
 LOCAL=http://localhost:9000
 
 [Flux Server Connection Settings]
