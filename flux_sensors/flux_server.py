@@ -140,7 +140,7 @@ class FluxServer:
             json_data = json.dumps(self._credentials, default=lambda o: o.__dict__)
             headers = {FluxServer.CONTENT_TYPE_HEADER: 'application/json'}
             response = requests.post(login_route, data=json_data, headers=headers)
-            if response == 401:
+            if response.status_code == 401:
                 raise AuthorizationError(
                     "Login Flux-server at {} failed. Wrong password or username configured.".format(login_route))
             self._auth_token = response.text
