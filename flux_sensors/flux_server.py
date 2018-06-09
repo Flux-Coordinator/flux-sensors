@@ -5,6 +5,7 @@ import requests
 from requests_futures.sessions import FuturesSession
 from concurrent.futures import Future
 import logging
+import json
 
 CHECK_SERVER_READY_ROUTE = ""
 CHECK_ACTIVE_MEASUREMENT_ROUTE = "/measurements/active"
@@ -39,13 +40,14 @@ class FluxServer:
         logger.info("Response: {} ({}){}".format(response.status_code, responses[response.status_code],
                                                  description))
 
-    def __init__(self) -> None:
+    def __init__(self, credentials: Dict[str, str]) -> None:
         self._check_ready_counter = 0
         self._server_url = ""
         self._poll_route = ""
         self._session = FuturesSession()
         self._last_response = 200
         self._auth_token = ""
+        self._credentials = credentials
 
     def _get_headers(self) -> Dict[str, str]:
         return {FluxServer.AUTHORIZATION_HEADER: self._auth_token, FluxServer.SENSOR_DEVICE_HEADER: ''}
@@ -135,7 +137,9 @@ class FluxServer:
     def login_at_server(self):
         if self._server_url != "":
             login_route = self._server_url + LOGIN_ROUTE
-            response = requests.get(login_route)
+            json_data = json.dumps(self._credentials, default=lambda o: o.__dict__)
+            headers = {FluxServer.CONTENT_TYPE_HEADER: 'application/json'}
+            response = requests.post(login_route, data=json_data, headers=headers)
             if response == 401:
                 raise AuthorizationError(
                     "Login Flux-server at {} failed. Wrong password or username configured.".format(login_route))
