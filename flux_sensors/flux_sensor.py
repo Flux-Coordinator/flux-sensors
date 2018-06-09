@@ -9,7 +9,6 @@ import json
 import logging
 
 logger = logging.getLogger(__name__)
-POST_READINGS_TIMEOUT = 10
 
 
 class FluxSensorError(Exception):
@@ -105,7 +104,7 @@ class FluxSensor:
         self._localizer.clear()
 
     def _reset_timeout(self) -> None:
-        self._timeout = time.time() + POST_READINGS_TIMEOUT
+        self._timeout = time.time() + self._config_loader.get_timeout()
 
     def _is_timeout_exceeded(self) -> bool:
         return time.time() > self._timeout
@@ -150,4 +149,5 @@ class FluxSensor:
                 logger.error("Pozyx error while creating new readings")
                 logger.error(err)
                 continue
-        logger.error("Timeout of {}s is exceeded while waiting for Flux-server response".format(POST_READINGS_TIMEOUT))
+        logger.error("Timeout of {}s is exceeded while waiting for Flux-server response".format(
+            self._config_loader.get_timeout()))
