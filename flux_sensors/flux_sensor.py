@@ -9,6 +9,7 @@ import json
 import logging
 
 logger = logging.getLogger(__name__)
+POST_READINGS_TIMEOUT = 10
 
 
 class FluxSensorError(Exception):
@@ -28,6 +29,7 @@ class FluxSensor:
         self._light_sensor = light_sensor_instance
         self._config_loader = config_loader
         self._flux_server = flux_server
+        self._timeout = time.time()
 
     def start_when_ready(self) -> None:
         logger.info("Flux-sensors in standby. Start polling Flux-server")
@@ -102,16 +104,22 @@ class FluxSensor:
     def clear_sensors(self) -> None:
         self._localizer.clear()
 
+    def _reset_timeout(self) -> None:
+        self._timeout = time.time() + POST_READINGS_TIMEOUT
+
+    def _is_timeout_exceeded(self) -> bool:
+        return time.time() > self._timeout
+
     def start_measurement(self) -> None:
         readings = []
         self._flux_server.initialize_last_response()
-        while True:
+        self._reset_timeout()
+        while not self._is_timeout_exceeded():
             try:
                 position = self._localizer.do_positioning()
                 illuminance = self._light_sensor.do_measurement()
 
                 readings.append(models.Reading(illuminance, position))
-
                 try:
                     if self._flux_server.get_last_response() == 200:
                         if len(readings) >= self._flux_server.MIN_BATCH_SIZE:
@@ -119,6 +127,7 @@ class FluxSensor:
                             json_data = json.dumps(readings, default=lambda o: o.__dict__)
                             self._flux_server.send_data_to_server(json_data)
                             del readings[:]
+                            self._reset_timeout()
                     elif self._flux_server.get_last_response() == 401:
                         logger.info("Auth token expired. Try new login...")
                         self._flux_server.login_at_server()
@@ -141,3 +150,4 @@ class FluxSensor:
                 logger.error("Pozyx error while creating new readings")
                 logger.error(err)
                 continue
+        logger.error("Timeout of {}s is exceeded while waiting for Flux-server response".format(POST_READINGS_TIMEOUT))
