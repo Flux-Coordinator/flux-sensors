@@ -43,6 +43,7 @@ class FluxSensor:
             logger.info("Success! A flux-server is available and a measurement is active.")
 
             try:
+                self._flux_server.login_at_server()
                 response = self._flux_server.get_active_measurement()
                 self._flux_server.log_server_response(response)
             except requests.exceptions.RequestException as err:
@@ -89,7 +90,6 @@ class FluxSensor:
             logger.error(err)
             raise InitializationError("Error while initializing Pozyx.")
 
-
     def initialize_light_sensor(self) -> None:
         self._light_sensor.initialize()
 
@@ -113,6 +113,10 @@ class FluxSensor:
                             json_data = json.dumps(readings, default=lambda o: o.__dict__)
                             self._flux_server.send_data_to_server(json_data)
                             del readings[:]
+                    elif self._flux_server.get_last_response() == 401:
+                        logger.info("Auth token expired. Try new login...")
+                        self._flux_server.login_at_server()
+                        self._flux_server.initialize_last_response()
                     elif self._flux_server.get_last_response() == 404:
                         logger.info("The measurement has been stopped by the server.")
                         return

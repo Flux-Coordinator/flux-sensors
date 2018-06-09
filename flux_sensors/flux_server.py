@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Dict, Optional, Callable
 import polling
 from http.client import responses
 import requests
@@ -9,6 +9,7 @@ import logging
 CHECK_SERVER_READY_ROUTE = ""
 CHECK_ACTIVE_MEASUREMENT_ROUTE = "/measurements/active"
 ADD_READINGS_ROUTE = "/measurements/active/readings"
+LOGIN_ROUTE = "/login"
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,8 @@ logger = logging.getLogger(__name__)
 class FluxServer:
     RESPONSE_PENDING = 0
     MIN_BATCH_SIZE = 3
+    CONTENT_TYPE_HEADER = "content-type"
+    AUTHORIZATION_HEADER = "Authorization"
     SENSOR_DEVICE_HEADER = "X-Flux-Sensor"
 
     @staticmethod
@@ -34,6 +37,10 @@ class FluxServer:
         self._poll_route = ""
         self._session = FuturesSession()
         self._last_response = 200
+        self._auth_token = ""
+
+    def _get_headers(self) -> Dict[str, str]:
+        return {FluxServer.AUTHORIZATION_HEADER: self._auth_token, FluxServer.SENSOR_DEVICE_HEADER: ''}
 
     def poll_server_urls(self, server_urls: List[str], timeout: Optional[int] = 3) -> bool:
         for server_url in server_urls:
@@ -52,7 +59,6 @@ class FluxServer:
 
         logger.info("Polling Flux-server at {}".format(self._server_url + self._poll_route))
 
-        headers = {FluxServer.SENSOR_DEVICE_HEADER: ''}
         ignore_exceptions = (requests.exceptions.RequestException,)
         poll_forever = False
         if timeout is None:
@@ -61,7 +67,7 @@ class FluxServer:
 
         try:
             polling.poll(
-                target=lambda: requests.get(server_url + route, headers=headers),
+                target=lambda: requests.get(server_url + route, headers=self._get_headers()),
                 check_success=self._check_polling_success,
                 step=2,
                 step_function=self._log_polling_step,
@@ -81,6 +87,8 @@ class FluxServer:
 
     def _check_polling_success(self, response: requests.Response) -> bool:
         self.log_server_response(response)
+        if response.status_code == 401:
+            self.login_at_server()
         return response.status_code == 200
 
     def _log_polling_step(self, step: int) -> int:
@@ -90,7 +98,8 @@ class FluxServer:
         return step
 
     def get_active_measurement(self) -> requests.Response:
-        return requests.get(self._server_url + CHECK_ACTIVE_MEASUREMENT_ROUTE)
+        return self.login_if_unauthorized(
+            lambda: requests.get(self._server_url + CHECK_ACTIVE_MEASUREMENT_ROUTE, headers=self._get_headers()))
 
     def initialize_last_response(self):
         self._last_response = 200
@@ -107,6 +116,21 @@ class FluxServer:
 
     def send_data_to_server(self, json_data: str) -> Future:
         logger.info("Sending: {}".format(json_data))
-        headers = {'content-type': 'application/json', FluxServer.SENSOR_DEVICE_HEADER: ''}
+        headers = self._get_headers()
+        headers[FluxServer.CONTENT_TYPE_HEADER] = 'application/json'
         return self._session.post(self._server_url + ADD_READINGS_ROUTE, data=json_data, headers=headers,
                                   background_callback=self._post_callback)
+
+    def login_at_server(self):
+        if self._server_url != "":
+            login_route = self._server_url + LOGIN_ROUTE
+            response = requests.get(login_route)
+            self._auth_token = response.text
+            logger.info("Login Flux-server at {} successful".format(login_route))
+
+    def login_if_unauthorized(self, server_request: Callable[[], requests.Response]) -> requests.Response:
+        response = server_request()
+        if response.status_code == 401:
+            self.login_at_server()
+            response = server_request()
+        return response
