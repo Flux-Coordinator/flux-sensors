@@ -39,6 +39,7 @@ class FluxSensor:
             logger.info("Server responding. Start measurement when ready...")
 
             if not self._flux_server.poll_active_measurement():
+                FluxSensor.handle_retry(3)
                 continue
             logger.info("Success! A flux-server is available and a measurement is active.")
 
@@ -54,6 +55,7 @@ class FluxSensor:
             except FluxServerError as err:
                 logger.error("Server error while loading active measurement from Flux-server")
                 logger.error(err)
+                FluxSensor.handle_retry(3)
                 continue
 
             try:
