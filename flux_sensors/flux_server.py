@@ -14,6 +14,14 @@ LOGIN_ROUTE = "/login"
 logger = logging.getLogger(__name__)
 
 
+class FluxServerError(Exception):
+    """Base class for exceptions in this module."""
+
+
+class AuthorizationError(FluxServerError):
+    """Exception raised when the authorization failed."""
+
+
 class FluxServer:
     RESPONSE_PENDING = 0
     MIN_BATCH_SIZE = 3
@@ -82,6 +90,9 @@ class FluxServer:
             if re.response is not None:
                 self.log_server_response(re.response)
             return False
+        except AuthorizationError as error:
+            logger.error(error)
+            return False
 
         return True
 
@@ -125,6 +136,9 @@ class FluxServer:
         if self._server_url != "":
             login_route = self._server_url + LOGIN_ROUTE
             response = requests.get(login_route)
+            if response == 401:
+                raise AuthorizationError(
+                    "Login Flux-server at {} failed. Wrong password or username configured.".format(login_route))
             self._auth_token = response.text
             logger.info("Login Flux-server at {} successful".format(login_route))
 

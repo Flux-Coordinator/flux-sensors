@@ -1,7 +1,7 @@
 from flux_sensors.localizer.localizer import Localizer, Coordinates, LocalizerError, PozyxDeviceError
 from flux_sensors.light_sensor.light_sensor import LightSensor
 from flux_sensors.config_loader import ConfigLoader
-from flux_sensors.flux_server import FluxServer
+from flux_sensors.flux_server import FluxServer, FluxServerError
 from flux_sensors.models import models
 import time
 import requests
@@ -50,6 +50,10 @@ class FluxSensor:
                 logger.error("Request error while loading active measurement from Flux-server")
                 logger.error(err)
                 FluxSensor.handle_retry(3)
+                continue
+            except FluxServerError as err:
+                logger.error("Server error while loading active measurement from Flux-server")
+                logger.error(err)
                 continue
 
             try:
@@ -124,8 +128,14 @@ class FluxSensor:
                         logger.info("The measurement has been stopped.")
                         return
                 except requests.exceptions.RequestException as err:
+                    logger.error("Request error while sending new readings to Flux-server")
+                    logger.error(err)
+                    return
+                except FluxServerError as err:
+                    logger.error("Server error while sending new readings to Flux-server")
                     logger.error(err)
                     return
             except PozyxDeviceError as err:
+                logger.error("Pozyx error while creating new readings")
                 logger.error(err)
                 continue
