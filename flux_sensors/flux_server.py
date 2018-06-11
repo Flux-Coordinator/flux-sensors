@@ -29,6 +29,7 @@ class FluxServer:
     CONTENT_TYPE_HEADER = "content-type"
     AUTHORIZATION_HEADER = "Authorization"
     SENSOR_DEVICE_HEADER = "X-Flux-Sensor"
+    CSRF_PROTECTION_HEADER = "X-Requested-With"
 
     @staticmethod
     def log_server_response(response: requests.Response) -> None:
@@ -131,6 +132,7 @@ class FluxServer:
         logger.info("Sending: {}".format(json_data))
         headers = self._get_headers()
         headers[FluxServer.CONTENT_TYPE_HEADER] = 'application/json'
+        headers[FluxServer.CSRF_PROTECTION_HEADER] = 'XMLHttpRequest'
         return self._session.post(self._server_url + ADD_READINGS_ROUTE, data=json_data, headers=headers,
                                   background_callback=self._post_callback)
 
