@@ -38,7 +38,7 @@ def main() -> None:
 
     config_loader = ConfigLoader()
 
-    flux_server = FluxServer()
+    flux_server = FluxServer(config_loader.get_credentials())
 
     flux_sensor = FluxSensor(pozyx_localizer, ams_light_sensor, config_loader, flux_server)
     flux_sensor.start_when_ready()

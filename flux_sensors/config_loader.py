@@ -1,11 +1,14 @@
-from typing import List, Optional
+from typing import List, Dict, Optional
 import configparser
 import logging
 
 CONFIG_FILE_PATH = "/home/pi/.config/flux-config.ini"
+SECTION_FLUX_SERVER_CREDENTIALS = "Flux Server Credentials"
 SECTION_FLUX_SERVER_URLS = "Flux Server URLs"
 SECTION_FLUX_SERVER_CONNECTION_SETTINGS = "Flux Server Connection Settings"
 DEFAULT_FLUX_SERVER_URL = "http://localhost:9000"
+DEFAULT_FLUX_SERVER_USERNAME = "user"
+DEFAULT_FLUX_SERVER_PASSWORD = "secret"
 DEFAULT_FLUX_SERVER_CONNECTION_TIMEOUT = 10
 
 logger = logging.getLogger(__name__)
@@ -14,6 +17,7 @@ logger = logging.getLogger(__name__)
 class ConfigLoader:
 
     def __init__(self) -> None:
+        self._credentials = {"username": DEFAULT_FLUX_SERVER_USERNAME, "password": DEFAULT_FLUX_SERVER_PASSWORD}
         self._timeout = DEFAULT_FLUX_SERVER_CONNECTION_TIMEOUT
         self._server_urls = []
         self._load_config()
@@ -22,8 +26,15 @@ class ConfigLoader:
         logger.info("Load config file '{}'...".format(CONFIG_FILE_PATH))
         config = configparser.ConfigParser()
         config.read(CONFIG_FILE_PATH)
+        self._load_credentials(config)
         self._load_connection_settings(config)
         self._load_server_urls(config)
+
+    def _load_credentials(self, config: configparser.ConfigParser) -> None:
+        flux_server_credentials = self._load_section(config, SECTION_FLUX_SERVER_CREDENTIALS)
+        if flux_server_credentials is not None:
+            self._credentials["username"] = flux_server_credentials.get("username", DEFAULT_FLUX_SERVER_USERNAME)
+            self._credentials["password"] = flux_server_credentials.get("password", DEFAULT_FLUX_SERVER_PASSWORD)
 
     def _load_connection_settings(self, config: configparser.ConfigParser) -> None:
         flux_server_connection_settings = self._load_section(config, SECTION_FLUX_SERVER_CONNECTION_SETTINGS)
@@ -58,6 +69,9 @@ class ConfigLoader:
             logger.error(
                 "Error: config file has wrong format for value '{}'. Using default value {} instead".format(key,
                                                                                                             default_value))
+
+    def get_credentials(self) -> Dict[str, str]:
+        return self._credentials
 
     def get_timeout(self) -> int:
         return self._timeout

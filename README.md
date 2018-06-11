@@ -98,6 +98,10 @@ sudo nano /home/pi/.config/flux-config.ini
 ``` 
 Add the following content:
 ```
+[Flux Server Credentials]
+username=user
+password=secret
+
 [Flux Server URLs]
 LAN=http://192.168.1.104:9000
 CLOUD=https://flux-server-staging.herokuapp.com
@@ -106,6 +110,13 @@ LOCAL=http://localhost:9000
 [Flux Server Connection Settings]
 timeout=5
 ```
-The names of the urls can be chosen freely. The script will go through the urls from top to bottom until it gets an answer.
+To apply changes in the config file the Flux-Sensor service needs to be restarted:
+```
+sudo systemctl restart flux.service
+```
 
-The timeout defines the maximum time to try connecting a url. It is set in whole seconds.
+The username and password need to match the config of the connected Flux-Server instance.
+
+The names of the server urls can be chosen freely. The script will go through the urls from top to bottom until it gets an answer.
+
+The timeout defines the maximum time to wait for a response from Flux-Server while polling or sending new readings. It is set in whole seconds.
