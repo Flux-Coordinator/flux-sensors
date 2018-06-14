@@ -3,10 +3,14 @@ FLUX-Sensors collects and combines positioning and illuminance data. It is runni
 ## Requirements
 
 - Python 3.5
-- Pip
-- Virtualenv: `pip3 install virtualenv`
+- Pip3
 
 ## Run development environment
+Install virtualenv:
+```
+pip3 install virtualenv
+```
+
 Start virtualenv to create an isolated Python environment:
 
 ```
