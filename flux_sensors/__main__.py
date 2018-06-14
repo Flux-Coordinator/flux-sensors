@@ -1,28 +1,47 @@
-from flux_sensors.localizer import localizer
+import sys
+import logging
+from flux_sensors.localizer.localizer import Localizer
+from flux_sensors.light_sensor.light_sensor import LightSensor
+from flux_sensors.flux_sensor import FluxSensor
+from flux_sensors.config_loader import ConfigLoader
+from flux_sensors.flux_server import FluxServer
+
+AMS_LIGHT_SENSOR_I2C_ADDRESS = 0x39
+
+logger = logging.getLogger('flux_sensors')
 
 
-def main():
+def setup_logging(verbose=False, quiet=False):
+    logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('[%(levelname)-7s] - %(message)s')
+    if quiet:
+        logger.setLevel(logging.WARNING)
+    elif verbose:
+        logger.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - [%(levelname)-7s] - %(message)s')
+
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+
+def main() -> None:
     """entry point"""
-    run_pozyx()
+    setup_logging(verbose=False)
 
+    pozyx = Localizer.get_device()
+    pozyx_localizer = Localizer(pozyx)
 
-def run_pozyx():
-    serial_port = localizer.get_first_pozyx_serial_port()
-    if serial_port is None:
-        print("No Pozyx connected. Check your USB cable or your driver!")
-        quit()
+    ams_device = LightSensor.get_device(1)
+    ams_light_sensor = LightSensor(AMS_LIGHT_SENSOR_I2C_ADDRESS, ams_device)
 
-    pozyx = localizer.PozyxSerial(serial_port)
-    pozyx_localizer = localizer.Localizer(pozyx)
+    config_loader = ConfigLoader()
 
-    pozyx_localizer.add_anchor(0x6e4e, localizer.Coordinates(-100, -100, 1150))
-    pozyx_localizer.add_anchor(0x6964, localizer.Coordinates(8450, -1200, 2150))
-    pozyx_localizer.add_anchor(0x6e5f, localizer.Coordinates(1250, -12000, 1150))
-    pozyx_localizer.add_anchor(0x6e62, localizer.Coordinates(7350, -11660, 1590))
+    flux_server = FluxServer(config_loader.get_credentials())
 
-    pozyx_localizer.initialize()
-    while True:
-        pozyx_localizer.do_positioning()
+    flux_sensor = FluxSensor(pozyx_localizer, ams_light_sensor, config_loader, flux_server)
+    flux_sensor.start_when_ready()
 
 
 if __name__ == "__main__":
