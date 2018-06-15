@@ -9,7 +9,7 @@ with open('LICENSE') as f:
 
 setup(
     name='flux_sensors',
-    version='0.0.1',
+    version='1.0.0',
     description='Sensor component of Flux-Coordinator',
     long_description=readme,
     author='Patrick Scherler, Esteban Luchsinger',
